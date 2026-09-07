@@ -1,0 +1,31 @@
+export interface City {
+  id: string;
+  name: string; // Primary name (usually English)
+  names: { ru: string; en: string }; // For search and display
+  country: string;
+  region: string;
+  lat: number;
+  lon: number;
+  timezone: string; // IANA timezone
+}
+
+export interface BirthData {
+  name: string;
+  date: string;
+  time: string;
+  birthCity: City;
+  residenceCity: City;
+  solarCity: City;
+  gmtTime?: string;
+  houseSystem?: string;
+}
+
+export interface AstroResult {
+  id: string;
+  name: string;
+  longitude: number;
+  latitude: number;
+  distance: number;
+  speedLongitude: number;
+  isRetrograde: boolean;
+}

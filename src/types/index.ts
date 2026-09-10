@@ -18,6 +18,15 @@ export interface BirthData {
   solarCity: City;
   gmtTime?: string;
   houseSystem?: string;
+  manualOverride?: {
+    enabled: boolean;
+    lat?: number;
+    latDir?: 'N' | 'S';
+    lon?: number;
+    lonDir?: 'E' | 'W';
+    timezone?: string;
+    dst?: 'auto' | 'observe' | 'ignore';
+  };
 }
 
 export interface AstroResult {

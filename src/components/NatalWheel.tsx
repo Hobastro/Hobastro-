@@ -48,20 +48,20 @@ export const NatalWheel: React.FC<NatalWheelProps> = ({ chart, aspects, selected
   const dscLongitude = chart.houses.angles.descendant.longitude;
   const icLongitude = chart.houses.angles.ic.longitude;
 
-  // Разворот на 180° чтобы ASC был слева
-  const rotationOffset = 180 - ascLongitude + 180;
+  // ASC слева на 180°
+  const rotationOffset = 270 - ascLongitude;
 
   const getRotatedAngle = (lon: number) => {
     return (lon + rotationOffset) % 360;
   };
 
-  const size = 500;
+  const size = 600;
   const center = size / 2;
-  const outerRadius = 220;
-  const signRadius = 190;
-  const houseRadius = 150;
+  const outerRadius = 250;
+  const signRadius = 215;
+  const houseRadius = 160;
   const planetRadius = 120;
-  const aspectRadius = 90;
+  const aspectRadius = 85;
 
   const polarToCartesian = (angleDeg: number, radius: number) => {
     const rad = (angleDeg * Math.PI) / 180.0;
@@ -95,34 +95,55 @@ export const NatalWheel: React.FC<NatalWheelProps> = ({ chart, aspects, selected
   const adjustedPlanets = getAdjustedPlanetPositions();
 
   return (
-    <div style={{ position: 'relative', width: '100%', maxWidth: '500px', margin: '0 auto' }}>
+    <div style={{ position: 'relative', width: '100%', maxWidth: '600px', margin: '0 auto', padding: '20px' }}>
       <svg
         viewBox={`0 0 ${size} ${size}`}
-        style={{ width: '100%', height: 'auto', background: '#fff', border: '1px solid #333', borderRadius: '50%' }}
+        style={{ width: '100%', height: 'auto', background: '#ffffff', borderRadius: '50%' }}
         onMouseLeave={() => setTooltip(null)}
       >
-        {/* Основные круги */}
-        <circle cx={center} cy={center} r={outerRadius} fill="none" stroke="#000" strokeWidth="2.5" />
-        <circle cx={center} cy={center} r={signRadius} fill="none" stroke="#333" strokeWidth="1.5" />
-        <circle cx={center} cy={center} r={houseRadius} fill="none" stroke="#666" strokeWidth="1.5" />
-        <circle cx={center} cy={center} r={aspectRadius} fill="none" stroke="#999" strokeWidth="1" />
+        {/* Основные круги - стиль как на референсе */}
+        <circle cx={center} cy={center} r={outerRadius} fill="none" stroke="#1a1a1a" strokeWidth="3" />
+        <circle cx={center} cy={center} r={signRadius} fill="none" stroke="#404040" strokeWidth="2" />
+        <circle cx={center} cy={center} r={houseRadius} fill="none" stroke="#808080" strokeWidth="1.5" />
+        <circle cx={center} cy={center} r={aspectRadius} fill="none" stroke="#c0c0c0" strokeWidth="1" />
 
-        {/* Градусные засечки каждые 10° */}
-        {Array.from({ length: 36 }).map((_, i) => {
-          const angle = i * 10;
+        {/* Градусные засечки каждые 30° (для знаков) - большие */}
+        {Array.from({ length: 12 }).map((_, i) => {
+          const angle = i * 30;
           const rotAngle = getRotatedAngle(angle);
           const p1 = polarToCartesian(rotAngle, outerRadius);
-          const p2 = polarToCartesian(rotAngle, outerRadius + 12);
+          const p2 = polarToCartesian(rotAngle, outerRadius + 15);
           
           return (
             <line
-              key={`tick-${i}`}
+              key={`tick-30-${i}`}
               x1={p1.x}
               y1={p1.y}
               x2={p2.x}
               y2={p2.y}
-              stroke="#000"
-              strokeWidth="1.2"
+              stroke="#1a1a1a"
+              strokeWidth="1.5"
+            />
+          );
+        })}
+
+        {/* Засечки каждые 10° - средние */}
+        {Array.from({ length: 36 }).map((_, i) => {
+          if (i % 3 === 0) return null;
+          const angle = i * 10;
+          const rotAngle = getRotatedAngle(angle);
+          const p1 = polarToCartesian(rotAngle, outerRadius);
+          const p2 = polarToCartesian(rotAngle, outerRadius + 10);
+          
+          return (
+            <line
+              key={`tick-10-${i}`}
+              x1={p1.x}
+              y1={p1.y}
+              x2={p2.x}
+              y2={p2.y}
+              stroke="#404040"
+              strokeWidth="1"
             />
           );
         })}
@@ -133,17 +154,17 @@ export const NatalWheel: React.FC<NatalWheelProps> = ({ chart, aspects, selected
           const angle = i;
           const rotAngle = getRotatedAngle(angle);
           const p1 = polarToCartesian(rotAngle, outerRadius);
-          const p2 = polarToCartesian(rotAngle, outerRadius + 6);
+          const p2 = polarToCartesian(rotAngle, outerRadius + 5);
           
           return (
             <line
-              key={`tick-small-${i}`}
+              key={`tick-1-${i}`}
               x1={p1.x}
               y1={p1.y}
               x2={p2.x}
               y2={p2.y}
-              stroke="#999"
-              strokeWidth="0.5"
+              stroke="#a0a0a0"
+              strokeWidth="0.7"
             />
           );
         })}
@@ -157,17 +178,17 @@ export const NatalWheel: React.FC<NatalWheelProps> = ({ chart, aspects, selected
 
           const p1 = polarToCartesian(rotStart, outerRadius);
           const p2 = polarToCartesian(rotStart, signRadius);
-          const textPos = polarToCartesian(rotMid, (outerRadius + signRadius) / 2 - 5);
+          const textPos = polarToCartesian(rotMid, (outerRadius + signRadius) / 2 - 8);
 
           return (
             <g key={sign.name}>
-              <line x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y} stroke="#333" strokeWidth="1.5" />
+              <line x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y} stroke="#404040" strokeWidth="1.5" />
               <text
                 x={textPos.x}
                 y={textPos.y}
                 textAnchor="middle"
                 dominantBaseline="central"
-                fontSize="16"
+                fontSize="18"
                 fill={sign.color}
                 fontWeight="bold"
                 transform={`rotate(${-(rotMid)}, ${textPos.x}, ${textPos.y})`}
@@ -191,9 +212,9 @@ export const NatalWheel: React.FC<NatalWheelProps> = ({ chart, aspects, selected
               y1={pInner.y}
               x2={pOuter.x}
               y2={pOuter.y}
-              stroke="#999"
-              strokeWidth="1.2"
-              strokeDasharray="3,3"
+              stroke="#b0b0b0"
+              strokeWidth="1"
+              strokeDasharray="4,2"
             />
           );
         })}
@@ -212,11 +233,15 @@ export const NatalWheel: React.FC<NatalWheelProps> = ({ chart, aspects, selected
 
           return (
             <>
-              <line x1={ascPoint.x} y1={ascPoint.y} x2={dscPoint.x} y2={dscPoint.y} stroke="#ff4d4f" strokeWidth="2" />
+              {/* ASC-DSC линия */}
+              <line x1={ascPoint.x} y1={ascPoint.y} x2={dscPoint.x} y2={dscPoint.y} stroke="#ff4d4f" strokeWidth="2.5" />
+              <circle cx={ascPoint.x} cy={ascPoint.y} r="5" fill="none" stroke="#ff4d4f" strokeWidth="1.5" />
+              <circle cx={dscPoint.x} cy={dscPoint.y} r="5" fill="none" stroke="#ff4d4f" strokeWidth="1.5" />
+              
               <text 
-                x={ascPoint.x - 20} 
+                x={ascPoint.x - 25} 
                 y={ascPoint.y} 
-                fontSize="12" 
+                fontSize="13" 
                 fill="#ff4d4f" 
                 fontWeight="bold" 
                 textAnchor="end" 
@@ -225,9 +250,9 @@ export const NatalWheel: React.FC<NatalWheelProps> = ({ chart, aspects, selected
                 ASC
               </text>
               <text 
-                x={dscPoint.x + 20} 
+                x={dscPoint.x + 25} 
                 y={dscPoint.y} 
-                fontSize="12" 
+                fontSize="13" 
                 fill="#ff4d4f" 
                 fontWeight="bold" 
                 textAnchor="start" 
@@ -236,11 +261,15 @@ export const NatalWheel: React.FC<NatalWheelProps> = ({ chart, aspects, selected
                 DSC
               </text>
 
-              <line x1={mcPoint.x} y1={mcPoint.y} x2={icPoint.x} y2={icPoint.y} stroke="#1890ff" strokeWidth="2" />
+              {/* MC-IC линия */}
+              <line x1={mcPoint.x} y1={mcPoint.y} x2={icPoint.x} y2={icPoint.y} stroke="#1890ff" strokeWidth="2.5" />
+              <circle cx={mcPoint.x} cy={mcPoint.y} r="5" fill="none" stroke="#1890ff" strokeWidth="1.5" />
+              <circle cx={icPoint.x} cy={icPoint.y} r="5" fill="none" stroke="#1890ff" strokeWidth="1.5" />
+              
               <text 
                 x={mcPoint.x} 
-                y={mcPoint.y - 15} 
-                fontSize="12" 
+                y={mcPoint.y - 18} 
+                fontSize="13" 
                 fill="#1890ff" 
                 fontWeight="bold" 
                 textAnchor="middle"
@@ -249,8 +278,8 @@ export const NatalWheel: React.FC<NatalWheelProps> = ({ chart, aspects, selected
               </text>
               <text 
                 x={icPoint.x} 
-                y={icPoint.y + 18} 
-                fontSize="12" 
+                y={icPoint.y + 20} 
+                fontSize="13" 
                 fill="#1890ff" 
                 fontWeight="bold" 
                 textAnchor="middle"
@@ -269,7 +298,7 @@ export const NatalWheel: React.FC<NatalWheelProps> = ({ chart, aspects, selected
           const pt1 = polarToCartesian(p1Rot, aspectRadius);
           const pt2 = polarToCartesian(p2Rot, aspectRadius);
 
-          let strokeColor = '#bfbfbf';
+          let strokeColor = '#d0d0d0';
           if (asp.aspectType === 'trine' || asp.aspectType === 'sextile') {
             strokeColor = '#52c41a';
           } else if (asp.aspectType === 'square' || asp.aspectType === 'opposition') {
@@ -288,8 +317,8 @@ export const NatalWheel: React.FC<NatalWheelProps> = ({ chart, aspects, selected
               x2={pt2.x}
               y2={pt2.y}
               stroke={strokeColor}
-              strokeWidth={isAspectSelected ? 2.5 : (asp.aspectType === 'conjunction' ? 1.5 : 1.2)}
-              opacity={isAspectSelected ? 1 : 0.7}
+              strokeWidth={isAspectSelected ? 2.5 : (asp.aspectType === 'conjunction' ? 1.8 : 1.2)}
+              opacity={isAspectSelected ? 1 : 0.6}
               onMouseEnter={(e) => {
                 const rect = e.currentTarget.ownerSVGElement?.getBoundingClientRect();
                 if (rect) {
@@ -328,17 +357,17 @@ export const NatalWheel: React.FC<NatalWheelProps> = ({ chart, aspects, selected
               <circle
                 cx={x}
                 cy={y}
-                r={isSelected ? "14" : "10"}
+                r={isSelected ? "15" : "11"}
                 fill={isSelected ? "#ff9900" : "#ffffff"}
                 stroke="#003366"
-                strokeWidth={isSelected ? "2.5" : "1.5"}
+                strokeWidth={isSelected ? "3" : "2"}
               />
               <text
                 x={x}
                 y={y}
                 textAnchor="middle"
                 dominantBaseline="central"
-                fontSize="12"
+                fontSize="13"
                 fill={isSelected ? "#000000" : "#003366"}
                 fontWeight="bold"
               >
@@ -355,11 +384,11 @@ export const NatalWheel: React.FC<NatalWheelProps> = ({ chart, aspects, selected
             position: 'absolute',
             left: tooltip.x + 10,
             top: tooltip.y + 10,
-            background: 'rgba(0, 0, 0, 0.8)',
+            background: 'rgba(0, 0, 0, 0.85)',
             color: '#fff',
-            padding: '4px 8px',
+            padding: '6px 10px',
             borderRadius: '4px',
-            fontSize: '11px',
+            fontSize: '12px',
             whiteSpace: 'pre-line',
             pointerEvents: 'none',
             zIndex: 10,

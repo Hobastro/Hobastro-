@@ -273,6 +273,10 @@ export const NatalChart = () => {
 
   const [manualOpen, setManualOpen] = useState<boolean>(birthData.manualOverride?.enabled || false);
 
+  const [shestopalovEnabled, setShestopalovEnabled] = useState<boolean>(() => {
+    return localStorage.getItem('hobastro_shestopalov_enabled') === 'true';
+  });
+
   const getInitialLatDMS = () => {
     const dec = birthData.manualOverride?.lat !== undefined ? birthData.manualOverride.lat : birthData.birthCity.lat;
     return decimalToDegMin(dec);
@@ -387,10 +391,6 @@ export const NatalChart = () => {
     const aspects = calculateAspects(enrichedChart.positions);
     const bindhuMatrix = createBindhuMatrix(enrichedChart, aspects);
     const houseMatrix = createHouseMatrix(enrichedChart);
-    const [shestopalovEnabled, setShestopalovEnabled] = useState<boolean>(() => {
-      return localStorage.getItem('hobastro_shestopalov_enabled') === 'true';
-    });
-
     const shestopalovData = createShestopalovBaseData(enrichedChart, birthData.houseSystem, shestopalovEnabled);
 
     const handleShestopalovToggle = (enabled: boolean) => {

@@ -45,7 +45,7 @@ export interface AstroCalculationResult {
   houses: HouseSystemData;
 }
 
-export type HouseSystemType = 'Placidus' | 'Koch' | 'Equal' | 'Regiomontanus' | 'WholeSign';
+export type HouseSystemType = 'Placidus' | 'Koch' | 'KochShestopalov' | 'Equal' | 'Regiomontanus' | 'WholeSign';
 
 export function parseTimezoneToOffset(tzStr: string): number | null {
   if (!tzStr || tzStr === 'Автоматически') return null;

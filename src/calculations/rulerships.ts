@@ -70,7 +70,7 @@ export const ESSENTIAL_DIGNITIES_MAP: Record<PlanetId, EssentialDignities> = {
   'mercury': {
     domicile: ['Близнецы', 'Дева'],
     detriment: ['Стрелец', 'Рыбы'],
-    exaltation: 'Дева', // or Aquarius in some traditions, but Virgo is standard for traditional domicile/exaltation combination
+    exaltation: 'Дева',
     fall: 'Рыбы',
   },
   'venus': {

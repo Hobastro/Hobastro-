@@ -1,7 +1,7 @@
 import { calculateEnrichedChart } from './planetLayer';
 import { executeFormulaEngine, REGISTERED_FORMULAS, FormulaDefinition } from './formulaEngine';
 import { BirthData, City } from '../types';
-import { calculateAspects } from './aspectEngine';
+import { calculateAspects, calculateChartAspects } from './aspectEngine';
 
 const testCity: City = {
   id: 'moscow',
@@ -88,7 +88,7 @@ try {
   console.log('✓ Successfully supported multiple/custom formula definitions.');
 
   // 5. Test integration with existing Aspect Engine
-  const directAspects = calculateAspects(enrichedChart.positions);
+  const directAspects = calculateChartAspects(enrichedChart);
   console.assert(Array.isArray(directAspects), 'Aspect engine should provide aspect results');
   console.log(`✓ Aspect Engine integrated successfully (${directAspects.length} aspects detected).`);
 

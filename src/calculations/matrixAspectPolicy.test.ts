@@ -135,11 +135,11 @@ const mockHouses: HouseMatrixItem[] = [
 ];
 
 const mockPositions: EnrichedPlanetPosition[] = [
-  { id: 'mars', name: 'Марс', longitude: 10.0, speed: 1, sign: 'Овен', degree: 10, retrograde: false, ruler: 'mars', rulesSigns: ['Овен'], dignities: { isDomicile: true, isDetriment: false, isExalted: false, isFallen: false } },
-  { id: 'venus', name: 'Венера', longitude: 17.5, speed: 1, sign: 'Овен', degree: 17.5, retrograde: false, ruler: 'venus', rulesSigns: ['Телец'], dignities: { isDomicile: false, isDetriment: false, isExalted: false, isFallen: false } },
-  { id: 'mercury', name: 'Меркурий', longitude: 66.0, speed: 1, sign: 'Близнецы', degree: 6, retrograde: false, ruler: 'mercury', rulesSigns: ['Близнецы'], dignities: { isDomicile: true, isDetriment: false, isExalted: false, isFallen: false } },
-  { id: 'moon', name: 'Луна', longitude: 100.0, speed: 1, sign: 'Рак', degree: 10, retrograde: false, ruler: 'moon', rulesSigns: ['Рак'], dignities: { isDomicile: true, isDetriment: false, isExalted: false, isFallen: false } },
-  { id: 'sun', name: 'Солнце', longitude: 190.0, speed: 1, sign: 'Весы', degree: 10, retrograde: false, ruler: 'venus', rulesSigns: ['Лев'], dignities: { isDomicile: false, isDetriment: false, isExalted: true, isFallen: false } },
+  { id: 'mars', name: 'Марс', longitude: 10.0, speed: 1, sign: 'Овен', degree: 10, retrograde: false, house: 1, ruler: 'mars', rulesSigns: ['Овен'], rulesHouses: [], dignities: { isDomicile: true, isDetriment: false, isExalted: false, isFallen: false } },
+  { id: 'venus', name: 'Венера', longitude: 17.5, speed: 1, sign: 'Овен', degree: 17.5, retrograde: false, house: 1, ruler: 'venus', rulesSigns: ['Телец'], rulesHouses: [], dignities: { isDomicile: false, isDetriment: false, isExalted: false, isFallen: false } },
+  { id: 'mercury', name: 'Меркурий', longitude: 66.0, speed: 1, sign: 'Близнецы', degree: 6, retrograde: false, house: 3, ruler: 'mercury', rulesSigns: ['Близнецы'], rulesHouses: [], dignities: { isDomicile: true, isDetriment: false, isExalted: false, isFallen: false } },
+  { id: 'moon', name: 'Луна', longitude: 100.0, speed: 1, sign: 'Рак', degree: 10, retrograde: false, house: 4, ruler: 'moon', rulesSigns: ['Рак'], rulesHouses: [], dignities: { isDomicile: true, isDetriment: false, isExalted: false, isFallen: false } },
+  { id: 'sun', name: 'Солнце', longitude: 190.0, speed: 1, sign: 'Весы', degree: 10, retrograde: false, house: 7, ruler: 'venus', rulesSigns: ['Лев'], rulesHouses: [], dignities: { isDomicile: false, isDetriment: false, isExalted: true, isFallen: false } },
 ];
 
 const aspectsBetweenRulers = calculateMatrixAspects(mockHouses, mockPositions);

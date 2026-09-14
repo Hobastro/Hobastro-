@@ -67,7 +67,7 @@ export const NatalProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
   useEffect(() => {
     loadChart();
-  }, [birthData.date, birthData.time, birthData.birthCity?.lat, birthData.birthCity?.lon, birthData.birthCity?.timezone, birthData.houseSystem]);
+  }, [birthData.date, birthData.time, birthData.birthCity?.lat, birthData.birthCity?.lon, birthData.birthCity?.timezone, birthData.houseSystem, birthData.manualOverride]);
 
   const value = {
     birthData,

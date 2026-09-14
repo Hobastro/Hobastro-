@@ -79,6 +79,7 @@ export const CelestialTable: React.FC<CelestialTableProps> = ({ chart }) => {
         const signs = ['Овен', 'Телец', 'Близнецы', 'Рак', 'Лев', 'Дева', 'Весы', 'Скорпион', 'Стрелец', 'Козерог', 'Водолей', 'Рыбы'] as const;
         const signIdx = Math.floor(southLon / 30) % 12;
         const deg = southLon % 30;
+        const house = getObjectHouse(southLon, chart.houses.cusps);
         pos = {
           id: 'south_node',
           name: 'Южный узел',
@@ -87,8 +88,11 @@ export const CelestialTable: React.FC<CelestialTableProps> = ({ chart }) => {
           sign: signs[signIdx],
           degree: deg,
           retrograde: nn.retrograde,
+          house,
           ruler: 'venus' as any,
           rulesSigns: [],
+           rulesHouses: [],
+           modernRulesHouses: [],
           dignities: { isDomicile: false, isDetriment: false, isExalted: false, isFallen: false }
         };
       }
@@ -123,6 +127,7 @@ export const CelestialTable: React.FC<CelestialTableProps> = ({ chart }) => {
               <th style={{ padding: '6px 8px', borderBottom: '1px solid #d9d9d9' }}>Знак</th>
               <th style={{ padding: '6px 8px', borderBottom: '1px solid #d9d9d9' }}>Градус</th>
               <th style={{ padding: '6px 8px', borderBottom: '1px solid #d9d9d9' }}>Дом</th>
+              <th style={{ padding: '6px 8px', borderBottom: '1px solid #d9d9d9' }}>Управляет домами</th>
               <th style={{ padding: '6px 8px', borderBottom: '1px solid #d9d9d9' }}>Скорость</th>
               <th style={{ padding: '6px 8px', borderBottom: '1px solid #d9d9d9' }}>Ретро</th>
             </tr>
@@ -137,6 +142,16 @@ export const CelestialTable: React.FC<CelestialTableProps> = ({ chart }) => {
                 <td style={{ padding: '6px 8px' }}>{row.sign}</td>
                 <td style={{ padding: '6px 8px', fontFamily: 'monospace' }}>{formatDegree(row.degree)}</td>
                 <td style={{ padding: '6px 8px', fontWeight: 'bold', color: '#003366' }}>{row.house} дом</td>
+                <td style={{ padding: '6px 8px' }}>
+                  {(() => {
+                    const isModern = row.id === 'uranus' || row.id === 'neptune' || row.id === 'pluto';
+                    const houses = isModern 
+                      ? ((row as any).modernRulesHouses ?? []) 
+                      : (row.rulesHouses ?? []);
+                    if (houses.length === 0) return '—';
+                    return `${houses.join(', ')} ${houses.length === 1 ? 'дом' : 'дома'}`;
+                  })()}
+                </td>
                 <td style={{ padding: '6px 8px', fontFamily: 'monospace', color: row.speed < 0 ? '#ff4d4f' : 'inherit' }}>
                   {row.speed > 0 ? `+${row.speed.toFixed(2)}` : row.speed.toFixed(2)}°/д
                 </td>

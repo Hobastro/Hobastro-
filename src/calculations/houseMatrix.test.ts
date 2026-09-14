@@ -8,13 +8,13 @@ console.log('--- RUNNING HOUSE MATRIX (STEP 9.4) ARCHITECTURE TESTS ---');
 try {
   // Construct mock positions
   const mockPositions: EnrichedPlanetPosition[] = [
-    { id: 'mars', name: 'Марс', longitude: 10.0, speed: 1, sign: 'Овен', degree: 10, retrograde: false, ruler: 'mars', rulesSigns: ['Овен', 'Скорпион'], dignities: { isDomicile: true, isDetriment: false, isExalted: false, isFallen: false } },
-    { id: 'venus', name: 'Венера', longitude: 40.0, speed: 1, sign: 'Телец', degree: 10, retrograde: false, ruler: 'venus', rulesSigns: ['Телец', 'Весы'], dignities: { isDomicile: true, isDetriment: false, isExalted: false, isFallen: false } },
-    { id: 'mercury', name: 'Меркурий', longitude: 70.0, speed: 1, sign: 'Близнецы', degree: 10, retrograde: false, ruler: 'mercury', rulesSigns: ['Близнецы', 'Дева'], dignities: { isDomicile: true, isDetriment: false, isExalted: false, isFallen: false } },
-    { id: 'moon', name: 'Луна', longitude: 100.0, speed: 1, sign: 'Рак', degree: 10, retrograde: false, ruler: 'moon', rulesSigns: ['Рак'], dignities: { isDomicile: true, isDetriment: false, isExalted: false, isFallen: false } },
-    { id: 'sun', name: 'Солнце', longitude: 130.0, speed: 1, sign: 'Лев', degree: 10, retrograde: false, ruler: 'venus', rulesSigns: ['Лев'], dignities: { isDomicile: true, isDetriment: false, isExalted: false, isFallen: false } },
-    { id: 'jupiter', name: 'Юпитер', longitude: 250.0, speed: 1, sign: 'Скорпион', degree: 10, retrograde: false, ruler: 'mars', rulesSigns: ['Стрелец', 'Рыбы'], dignities: { isDomicile: false, isDetriment: false, isExalted: false, isFallen: false } },
-    { id: 'saturn', name: 'Сатурн', longitude: 280.0, speed: 1, sign: 'Козерог', degree: 10, retrograde: false, ruler: 'saturn', rulesSigns: ['Козерог', 'Водолей'], dignities: { isDomicile: true, isDetriment: false, isExalted: false, isFallen: false } },
+    { id: 'mars', name: 'Марс', longitude: 10.0, speed: 1, sign: 'Овен', degree: 10, retrograde: false, house: 1, ruler: 'mars', rulesSigns: ['Овен', 'Скорпион'], rulesHouses: [], dignities: { isDomicile: true, isDetriment: false, isExalted: false, isFallen: false } },
+    { id: 'venus', name: 'Венера', longitude: 40.0, speed: 1, sign: 'Телец', degree: 10, retrograde: false, house: 2, ruler: 'venus', rulesSigns: ['Телец', 'Весы'], rulesHouses: [], dignities: { isDomicile: true, isDetriment: false, isExalted: false, isFallen: false } },
+    { id: 'mercury', name: 'Меркурий', longitude: 70.0, speed: 1, sign: 'Близнецы', degree: 10, retrograde: false, house: 3, ruler: 'mercury', rulesSigns: ['Близнецы', 'Дева'], rulesHouses: [], dignities: { isDomicile: true, isDetriment: false, isExalted: false, isFallen: false } },
+    { id: 'moon', name: 'Луна', longitude: 100.0, speed: 1, sign: 'Рак', degree: 10, retrograde: false, house: 4, ruler: 'moon', rulesSigns: ['Рак'], rulesHouses: [], dignities: { isDomicile: true, isDetriment: false, isExalted: false, isFallen: false } },
+    { id: 'sun', name: 'Солнце', longitude: 130.0, speed: 1, sign: 'Лев', degree: 10, retrograde: false, house: 5, ruler: 'venus', rulesSigns: ['Лев'], rulesHouses: [], dignities: { isDomicile: true, isDetriment: false, isExalted: false, isFallen: false } },
+    { id: 'jupiter', name: 'Юпитер', longitude: 250.0, speed: 1, sign: 'Скорпион', degree: 10, retrograde: false, house: 9, ruler: 'mars', rulesSigns: ['Стрелец', 'Рыбы'], rulesHouses: [], dignities: { isDomicile: false, isDetriment: false, isExalted: false, isFallen: false } },
+    { id: 'saturn', name: 'Сатурн', longitude: 280.0, speed: 1, sign: 'Козерог', degree: 10, retrograde: false, house: 10, ruler: 'saturn', rulesSigns: ['Козерог', 'Водолей'], rulesHouses: [], dignities: { isDomicile: true, isDetriment: false, isExalted: false, isFallen: false } },
   ];
 
   // Construct mock cusps where House 1 cusp is Aries (ruler mars in House 1 -> X->X),

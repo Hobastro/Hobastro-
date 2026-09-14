@@ -1,5 +1,5 @@
 import { EnrichedChartResult } from './planetLayer';
-import { AspectResult, calculateAspects } from './aspectEngine';
+import { AspectResult, calculateChartAspects } from './aspectEngine';
 
 /**
  * Source types for formula input data mapping.
@@ -198,7 +198,7 @@ export function executeFormulaEngine(
   }
 
   // Use Aspect Engine for aspect calculations as required
-  const aspects = calculateAspects(chart.positions);
+  const aspects = calculateChartAspects(chart);
   const definitions = customDefinitions || REGISTERED_FORMULAS;
 
   const results: FormulaResult[] = definitions.map(def => {

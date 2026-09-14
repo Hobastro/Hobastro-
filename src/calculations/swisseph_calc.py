@@ -1,5 +1,6 @@
 import sys
 import json
+import os
 import swisseph as swe
 from datetime import datetime
 import pytz
@@ -28,18 +29,32 @@ PLANETS = [
 
 def get_zodiac_info(lon):
     lon = lon % 360
-    sign_index = int(lon // 30) % 12
+    sign_index = int(lon // 30)
     degree = lon % 30
     return SIGNS[sign_index], degree
 
+def get_house(lon, cusps_list):
+    for i in range(12):
+        start = cusps_list[i]['longitude']
+        end = cusps_list[(i + 1) % 12]['longitude']
+        norm = (lon % 360 + 360) % 360
+        if end < start:
+            if norm >= start or norm < end:
+                return i + 1
+        else:
+            if norm >= start and norm < end:
+                return i + 1
+    return 1
+
 def calculate_houses(jd, lat, lon, house_system):
-    # house_system: 'Placidus', 'Koch', 'Equal', 'Regiomontanus', 'WholeSign'
+    # house_system: 'Placidus', 'Koch', 'KochShestopalov', 'Equal', 'Regiomontanus', 'WholeSign'
     system_map = {
         'Placidus': b'P',
         'Koch': b'K',
+        'KochShestopalov': b'K',
         'Equal': b'E',
         'Regiomontanus': b'R',
-        'WholeSign': b'W' # handled specially or via swe if supported, but let's implement explicitly for robust WholeSign & Equal
+        'WholeSign': b'W' 
     }
     
     # For Whole Sign and Equal, swe.houses with 'W' or 'E' can be used, 
@@ -92,13 +107,13 @@ def calculate_houses(jd, lat, lon, house_system):
         })
         
     asc_sign, asc_deg = get_zodiac_info(asc)
-    mc_sign, mc_deg = get_zippy = get_zodiac_info(mc)
+    mc_sign, mc_deg = get_zodiac_info(mc)
     ic_sign, ic_deg = get_zodiac_info(ic)
     dsc_sign, dsc_deg = get_zodiac_info(dsc)
     
     angles = {
         'ascendant': {'longitude': float(asc), 'sign': asc_sign, 'degree': float(asc_deg)},
-        'mc': {'longitude': float(mc), 'sign': mc_sign, 'degree': float(ic_deg if False else mc_deg)},
+        'mc': {'longitude': float(mc), 'sign': mc_sign, 'degree': float(mc_deg)},
         'ic': {'longitude': float(ic), 'sign': ic_sign, 'degree': float(ic_deg)},
         'descendant': {'longitude': float(dsc), 'sign': dsc_sign, 'degree': float(dsc_deg)}
     }
@@ -134,6 +149,10 @@ def calculate(data):
             local_dt = local_tz.localize(naive_dt, is_dst=None)
         utc_dt = local_dt.astimezone(pytz.UTC)
     
+    ephe_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../ephe'))
+    if not os.path.exists(ephe_path):
+        os.makedirs(ephe_path, exist_ok=True)
+    swe.set_ephe_path(ephe_path)
     year = utc_dt.year
     month = utc_dt.month
     day = utc_dt.day
@@ -166,6 +185,57 @@ def calculate(data):
         })
         
     houses_data = calculate_houses(jd, lat, lon_deg, house_system)
+    
+    # Chiron
+    chiron_res, _ = swe.calc_ut(jd, swe.CHIRON, swe.FLG_SWIEPH | swe.FLG_SPEED)
+    chiron_lon = chiron_res[0]
+    chiron_speed = chiron_res[3]
+    c_sign, c_deg = get_zodiac_info(chiron_lon)
+    results.append({
+        'id': 'chiron',
+        'name': 'Хирон',
+        'longitude': float(chiron_lon),
+        'speed': float(chiron_speed),
+        'sign': c_sign,
+        'degree': float(c_deg),
+        'retrograde': bool(chiron_speed < 0)
+    })
+
+    # Vertex from houses ascmc[3]
+    std_houses, ascmc = swe.houses(jd, lat, lon_deg, b'P')
+    vertex_lon = ascmc[3]
+    v_sign, v_deg = get_zodiac_info(vertex_lon)
+    results.append({
+        'id': 'vertex',
+        'name': 'Вертекс',
+        'longitude': float(vertex_lon),
+        'speed': 0.0,
+        'sign': v_sign,
+        'degree': float(v_deg),
+        'retrograde': False
+    })
+
+    asc = houses_data['angles']['ascendant']['longitude']
+    moon_pos = next(r for r in results if r['id'] == 'moon')
+    sun_pos = next(r for r in results if r['id'] == 'sun')
+    sun_h = get_house(sun_pos['longitude'], houses_data['cusps'])
+    is_day = sun_h in [7, 8, 9, 10, 11, 12]
+
+    if is_day:
+        fortune_lon = (asc + moon_pos['longitude'] - sun_pos['longitude']) % 360
+    else:
+        fortune_lon = (asc + sun_pos['longitude'] - moon_pos['longitude']) % 360
+
+    f_sign, f_deg = get_zodiac_info(fortune_lon)
+    results.append({
+        'id': 'fortune',
+        'name': 'Фортуна',
+        'longitude': float(fortune_lon),
+        'speed': 0.0,
+        'sign': f_sign,
+        'degree': float(f_deg),
+        'retrograde': False
+    })
         
     return {
         'utc': utc_dt.strftime('%Y-%m-%d %H:%M:%S UTC'),

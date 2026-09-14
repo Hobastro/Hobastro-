@@ -10,18 +10,18 @@ interface NatalWheelProps {
 }
 
 const ZODIAC_SIGNS = [
-  { name: 'Овен', symbol: '♈', color: 'red' },
-  { name: 'Телец', symbol: '♉', color: 'gray' },
-  { name: 'Близнецы', symbol: '♊', color: 'green' },
-  { name: 'Рак', symbol: '♋', color: 'blue' },
-  { name: 'Лев', symbol: '♌', color: 'red' },
-  { name: 'Дева', symbol: '♍', color: 'green' },
-  { name: 'Весы', symbol: '♎', color: 'green' },
-  { name: 'Скорпион', symbol: '♏', color: 'blue' },
-  { name: 'Стрелец', symbol: '♐', color: 'red' },
-  { name: 'Козерог', symbol: '♑', color: 'gray' },
-  { name: 'Водолей', symbol: '♒', color: 'green' },
-  { name: 'Рыбы', symbol: '♓', color: 'blue' },
+  { name: 'Овен', symbol: '♈\uFE0E', color: '#ff0000' },      // Овен: Red
+  { name: 'Телец', symbol: '♉\uFE0E', color: '#008b8b' },    // Телец: Green
+  { name: 'Близнецы', symbol: '♊\uFE0E', color: '#008b8b' },  // Близнецы: Green
+  { name: 'Рак', symbol: '♋\uFE0E', color: '#0000ff' },     // Рак: Blue
+  { name: 'Лев', symbol: '♌\uFE0E', color: '#ff0000' },      // Лев: Red
+  { name: 'Дева', symbol: '♍\uFE0E', color: '#008b8b' },    // Дева: Green
+  { name: 'Весы', symbol: '♎\uFE0E', color: '#008b8b' },    // Весы: Green
+  { name: 'Скорпион', symbol: '♏\uFE0E', color: '#0000ff' }, // Скорпион: Blue
+  { name: 'Стрелец', symbol: '♐\uFE0E', color: '#ff0000' },   // Стрелец: Red
+  { name: 'Козерог', symbol: '♑\uFE0E', color: '#008b8b' },  // Козерог: Green
+  { name: 'Водолей', symbol: '♒\uFE0E', color: '#20b2aa' },   // Aquarius: Green / Teal
+  { name: 'Рыбы', symbol: '♓\uFE0E', color: '#0000ff' },     // Рыбы: Blue
 ];
 
 const PLANET_SYMBOLS: Record<string, string> = {
@@ -57,10 +57,11 @@ export const NatalWheel: React.FC<NatalWheelProps> = ({ chart, aspects, selected
   const size = 500;
   const center = size / 2;
   const outerRadius = 220;
-  const signRadius = 190;
-  const houseRadius = 150;
-  const planetRadius = 120;
-  const aspectRadius = 90;
+  const signRadius = 180;
+  const houseBoundaryRadius = 135;
+  const planetRadius = 110;
+  const houseNumberRadius = 80;
+  const aspectRadius = 60;
 
   const polarToCartesian = (angleDeg: number, radius: number) => {
     const rad = (angleDeg * Math.PI) / 180.0;
@@ -72,20 +73,23 @@ export const NatalWheel: React.FC<NatalWheelProps> = ({ chart, aspects, selected
 
   const getAdjustedPlanetPositions = () => {
     const sorted = [...chart.positions].sort((a, b) => a.longitude - b.longitude);
-    const positions: { planet: EnrichedPlanetPosition; x: number; y: number; angle: number }[] = [];
-    const minAngleDiff = 5;
+    const positions: { planet: EnrichedPlanetPosition; x: number; y: number; angle: number; currentRadius: number }[] = [];
+    const minAngleDiff = 6;
 
     sorted.forEach((planet, idx) => {
       let angle = getRotatedAngle(planet.longitude);
+      let currentRadius = planetRadius;
+
       if (idx > 0) {
         const prev = positions[idx - 1];
         const diff = (angle - prev.angle + 360) % 360;
         if (diff < minAngleDiff && diff > -minAngleDiff) {
           angle = (prev.angle + minAngleDiff) % 360;
+          currentRadius = prev.currentRadius === planetRadius ? planetRadius + 14 : planetRadius;
         }
       }
-      const pos = polarToCartesian(angle, planetRadius);
-      positions.push({ planet, x: pos.x, y: pos.y, angle });
+      const pos = polarToCartesian(angle, currentRadius);
+      positions.push({ planet, x: pos.x, y: pos.y, angle, currentRadius });
     });
 
     return positions;
@@ -100,31 +104,26 @@ export const NatalWheel: React.FC<NatalWheelProps> = ({ chart, aspects, selected
         style={{ width: '100%', height: 'auto', background: '#fff', border: '1px solid #d9d9d9', borderRadius: '50%' }}
         onMouseLeave={() => setTooltip(null)}
       >
-        <circle cx={center} cy={center} r={outerRadius} fill="none" stroke="#003366" strokeWidth="2" />
-        <circle cx={center} cy={center} r={signRadius} fill="none" stroke="#d9d9d9" strokeWidth="1" />
+        <circle cx={center} cy={center} r={outerRadius} fill="none" stroke="#000000" strokeWidth="1" />
+        <circle cx={center} cy={center} r={signRadius} fill="none" stroke="#000000" strokeWidth="1" />
         
         {Array.from({ length: 360 }).map((_, deg) => {
           const rotDeg = getRotatedAngle(deg);
           const isSignBoundary = deg % 30 === 0;
           const isTenDeg = deg % 10 === 0;
-          const isFiveDeg = deg % 5 === 0;
           
           let tickLength = 3;
           let strokeWidth = 0.5;
-          let strokeColor = '#bfbfbf';
+          let strokeColor = '#666666';
 
           if (isSignBoundary) {
-            tickLength = 8;
-            strokeWidth = 1.2;
-            strokeColor = '#003366';
+            tickLength = 7;
+            strokeWidth = 1;
+            strokeColor = '#000000';
           } else if (isTenDeg) {
-            tickLength = 6;
-            strokeWidth = 0.8;
-            strokeColor = '#666666';
-          } else if (isFiveDeg) {
-            tickLength = 4;
-            strokeWidth = 0.6;
-            strokeColor = '#999999';
+            tickLength = 5;
+            strokeWidth = 0.7;
+            strokeColor = '#444444';
           }
 
           const pOuter = polarToCartesian(rotDeg, signRadius);
@@ -143,9 +142,9 @@ export const NatalWheel: React.FC<NatalWheelProps> = ({ chart, aspects, selected
           );
         })}
 
-        <circle cx={center} cy={center} r={signRadius - 8} fill="none" stroke="#d9d9d9" strokeWidth="1" />
-        <circle cx={center} cy={center} r={houseRadius} fill="none" stroke="#003366" strokeWidth="1.5" />
-        <circle cx={center} cy={center} r={aspectRadius} fill="none" stroke="#e8e8e8" strokeWidth="1" />
+        <circle cx={center} cy={center} r={signRadius} fill="none" stroke="#000000" strokeWidth="1" />
+        <circle cx={center} cy={center} r={houseBoundaryRadius} fill="none" stroke="#000000" strokeWidth="1" />
+        <circle cx={center} cy={center} r={aspectRadius} fill="none" stroke="#cccccc" strokeWidth="0.8" />
 
         {ZODIAC_SIGNS.map((sign, index) => {
           const startLon = index * 30;
@@ -165,9 +164,11 @@ export const NatalWheel: React.FC<NatalWheelProps> = ({ chart, aspects, selected
                 y={textPos.y}
                 textAnchor="middle"
                 dominantBaseline="central"
-                fontSize="14"
+                fontSize="22"
+                fontFamily="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
                 fill={sign.color}
-                fontWeight="bold"
+                fontWeight="700"
+                style={{ fill: sign.color, color: sign.color }}
               >
                 {sign.symbol}
               </text>
@@ -175,22 +176,41 @@ export const NatalWheel: React.FC<NatalWheelProps> = ({ chart, aspects, selected
           );
         })}
 
-        {chart.houses.cusps.map((cusp) => {
+        {chart.houses.cusps.map((cusp, idx) => {
           const rotLon = getRotatedAngle(cusp.longitude);
           const pInner = polarToCartesian(rotLon, aspectRadius);
-          const pOuter = polarToCartesian(rotLon, houseRadius);
+          const pOuter = polarToCartesian(rotLon, houseBoundaryRadius);
+
+          const nextCusp = chart.houses.cusps[(idx + 1) % 12];
+          const nextRotLon = getRotatedAngle(nextCusp.longitude);
+          
+          let diff = (nextRotLon - rotLon + 360) % 360;
+          const midRot = (rotLon + diff / 2) % 360;
+          const midPos = polarToCartesian(midRot, houseNumberRadius);
 
           return (
-            <line
-              key={cusp.id}
-              x1={pInner.x}
-              y1={pInner.y}
-              x2={pOuter.x}
-              y2={pOuter.y}
-              stroke="#bfbfbf"
-              strokeWidth="1"
-              strokeDasharray="2,2"
-            />
+            <g key={cusp.id}>
+              <line
+                x1={pInner.x}
+                y1={pInner.y}
+                x2={pOuter.x}
+                y2={pOuter.y}
+                stroke="#000000"
+                strokeWidth="0.8"
+              />
+              <text
+                x={midPos.x}
+                y={midPos.y}
+                textAnchor="middle"
+                dominantBaseline="central"
+                fontSize="12"
+                fontFamily="sans-serif"
+                fill="#333333"
+                fontWeight="600"
+              >
+                {cusp.number}
+              </text>
+            </g>
           );
         })}
 
@@ -202,18 +222,32 @@ export const NatalWheel: React.FC<NatalWheelProps> = ({ chart, aspects, selected
 
           const ascPoint = polarToCartesian(ascRot, outerRadius);
           const dscPoint = polarToCartesian(dscRot, outerRadius);
-          const mcPoint = polarToCartesian(mcRot, outerRadius);
-          const icPoint = polarToCartesian(icRot, outerRadius);
+          const mcPointOuter = polarToCartesian(mcRot, outerRadius);
+          const icPointOuter = polarToCartesian(icRot, outerRadius);
+
+          const ascTickOuter = polarToCartesian(ascRot, outerRadius + 6);
+          const ascTickInner = polarToCartesian(ascRot, outerRadius);
+          const dscTickOuter = polarToCartesian(dscRot, outerRadius + 6);
+          const dscTickInner = polarToCartesian(dscRot, outerRadius);
+          const mcTickOuter = polarToCartesian(mcRot, outerRadius + 6);
+          const mcTickInner = polarToCartesian(mcRot, outerRadius);
+          const icTickOuter = polarToCartesian(icRot, outerRadius + 6);
+          const icTickInner = polarToCartesian(icRot, outerRadius);
 
           return (
             <>
-              <line x1={ascPoint.x} y1={ascPoint.y} x2={dscPoint.x} y2={dscPoint.y} stroke="#ff4d4f" strokeWidth="1.5" />
-              <text x={ascPoint.x - 15} y={ascPoint.y} fontSize="10" fill="#ff4d4f" fontWeight="bold" textAnchor="end" dominantBaseline="central">ASC</text>
-              <text x={dscPoint.x + 15} y={dscPoint.y} fontSize="10" fill="#ff4d4f" fontWeight="bold" textAnchor="start" dominantBaseline="central">DSC</text>
+              <line x1={ascPoint.x} y1={ascPoint.y} x2={dscPoint.x} y2={dscPoint.y} stroke="#ff0000" strokeWidth="2" />
+              <line x1={ascTickInner.x} y1={ascTickInner.y} x2={ascTickOuter.x} y2={ascTickOuter.y} stroke="#000000" strokeWidth="2" />
+              <line x1={dscTickInner.x} y1={dscTickInner.y} x2={dscTickOuter.x} y2={dscTickOuter.y} stroke="#000000" strokeWidth="2" />
+              <text x={ascPoint.x - 15} y={ascPoint.y} fontSize="10" fill="#000000" fontWeight="bold" textAnchor="end" dominantBaseline="central">ASC</text>
+              <text x={dscPoint.x + 15} y={dscPoint.y} fontSize="10" fill="#000000" fontWeight="bold" textAnchor="start" dominantBaseline="central">DSC</text>
 
-              <line x1={mcPoint.x} y1={mcPoint.y} x2={icPoint.x} y2={icPoint.y} stroke="#1890ff" strokeWidth="1.5" />
-              <text x={mcPoint.x} y={mcPoint.y - 12} fontSize="10" fill="#1890ff" fontWeight="bold" textAnchor="middle">MC</text>
-              <text x={icPoint.x} y={icPoint.y + 14} fontSize="10" fill="#1890ff" fontWeight="bold" textAnchor="middle">IC</text>
+              <line x1={polarToCartesian(mcRot, aspectRadius).x} y1={polarToCartesian(mcRot, aspectRadius).y} x2={mcPointOuter.x} y2={mcPointOuter.y} stroke="#000000" strokeWidth="1.5" />
+              <line x1={polarToCartesian(icRot, aspectRadius).x} y1={polarToCartesian(icRot, aspectRadius).y} x2={icPointOuter.x} y2={icPointOuter.y} stroke="#000000" strokeWidth="1.5" />
+              <line x1={mcTickInner.x} y1={mcTickInner.y} x2={mcTickOuter.x} y2={mcTickOuter.y} stroke="#000000" strokeWidth="2" />
+              <line x1={icTickInner.x} y1={icTickInner.y} x2={icTickOuter.x} y2={icTickOuter.y} stroke="#000000" strokeWidth="2" />
+              <text x={mcPointOuter.x} y={mcPointOuter.y - 12} fontSize="10" fill="#000000" fontWeight="bold" textAnchor="middle">MC</text>
+              <text x={icPointOuter.x} y={icPointOuter.y + 14} fontSize="10" fill="#000000" fontWeight="bold" textAnchor="middle">IC</text>
             </>
           );
         })()}
@@ -226,12 +260,22 @@ export const NatalWheel: React.FC<NatalWheelProps> = ({ chart, aspects, selected
           const pt2 = polarToCartesian(p2Rot, aspectRadius);
 
           let strokeColor = '#bfbfbf';
-          if (asp.aspectType === 'trine' || asp.aspectType === 'sextile') {
-            strokeColor = '#52c41a';
-          } else if (asp.aspectType === 'square' || asp.aspectType === 'opposition') {
-            strokeColor = '#ff4d4f';
+          let strokeWidthVal = 1;
+          if (asp.aspectType === 'opposition') {
+            strokeColor = '#ff0000'; // ярко-красная
+            strokeWidthVal = 1.5;
+          } else if (asp.aspectType === 'square') {
+            strokeColor = '#ff0000'; // ярко-красная
+            strokeWidthVal = 1.5;
+          } else if (asp.aspectType === 'trine') {
+            strokeColor = '#000080'; // тёмно-синяя
+            strokeWidthVal = 1.2;
+          } else if (asp.aspectType === 'sextile') {
+            strokeColor = '#00bfff'; // тонкая голубая
+            strokeWidthVal = 0.8;
           } else if (asp.aspectType === 'conjunction') {
             strokeColor = '#faad14';
+            strokeWidthVal = 1.5;
           }
 
           const isAspectSelected = selectedObjectId && (asp.source.id === selectedObjectId || asp.target.id === selectedObjectId);
@@ -244,8 +288,8 @@ export const NatalWheel: React.FC<NatalWheelProps> = ({ chart, aspects, selected
               x2={pt2.x}
               y2={pt2.y}
               stroke={strokeColor}
-              strokeWidth={isAspectSelected ? 2.5 : (asp.aspectType === 'conjunction' ? 1.5 : 1)}
-              opacity={isAspectSelected ? 1 : 0.7}
+              strokeWidth={isAspectSelected ? 2.5 : strokeWidthVal}
+              opacity={isAspectSelected ? 1 : 0.8}
               onMouseEnter={(e) => {
                 const rect = e.currentTarget.ownerSVGElement?.getBoundingClientRect();
                 if (rect) {
@@ -276,31 +320,27 @@ export const NatalWheel: React.FC<NatalWheelProps> = ({ chart, aspects, selected
                 const rect = e.currentTarget.ownerSVGElement?.getBoundingClientRect();
                 if (rect) {
                   setTooltip({
-                    text: `${planet.name}\nЗнак: ${planet.sign}\nГрадус: ${planet.degree.toFixed(2)}°\nДолгота: ${planet.longitude.toFixed(2)}°`,
+                    text: `${planet.name} ${planet.retrograde ? '(ретро)' : ''}\nЗнак: ${planet.sign}\nГрадус: ${planet.degree.toFixed(2)}°\nДолгота: ${planet.longitude.toFixed(2)}°`,
                     x: e.clientX - rect.left,
                     y: e.clientY - rect.top,
                   });
                 }
               }}
             >
-              <circle
-                cx={x}
-                cy={y}
-                r={isSelected ? "14" : "10"}
-                fill={isSelected ? "#ff9900" : "#ffffff"}
-                stroke="#003366"
-                strokeWidth={isSelected ? "2" : "1"}
-              />
               <text
                 x={x}
                 y={y}
                 textAnchor="middle"
                 dominantBaseline="central"
-                fontSize="12"
-                fill={isSelected ? "#000000" : planetColor}
-                fontWeight="bold"
+                fontSize="22"
+                fontFamily="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
+                fill={isSelected ? "#ff9900" : planetColor}
+                fontWeight="700"
               >
                 {symbol}
+                {planet.retrograde && (
+                  <tspan fontSize="8" fill="#1890ff" fontWeight="bold" dx="1" dy="-4">R</tspan>
+                )}
               </text>
             </g>
           );

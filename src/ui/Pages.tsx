@@ -1,18 +1,22 @@
 import React, { FC, ReactNode, useState, useEffect } from 'react';
-import { Form, Input, Button, Row, Col, AutoComplete, Select } from 'antd';
+import { Form, Input, Button, Row, Col, AutoComplete, Select, Space } from 'antd';
 import { City, BirthData } from '../types';
 import dayjs from 'dayjs';
 import { Pencil } from 'lucide-react';
-import { calculateAspects } from '../calculations/aspectEngine';
+import { calculateAspects, calculateChartAspects } from '../calculations/aspectEngine';
 import { NatalWheel } from '../components/NatalWheel';
 import { CelestialTable } from '../components/CelestialTable';
 import { BindhuTable } from '../components/BindhuTable';
 import { createBindhuMatrix } from '../calculations/bindhuEngine';
+import { getHouseSystemFeatures } from '../calculations/houseSystemConfig';
 import { validateShestopalovKoch, createShestopalovBaseData } from '../calculations/shestopalovEngine';
 import { ShestopalovWidget } from '../components/ShestopalovWidget';
 import { createHouseMatrix } from '../calculations/houseMatrixEngine';
 import { HouseMatrixWidget } from '../components/HouseMatrixWidget';
+import { HousesWidget } from '../components/HousesWidget';
+import { AspectsWidget } from '../components/AspectsWidget';
 import { useNatal } from '../calculations/natalSource';
+import { EnrichedChartResult, EnrichedPlanetPosition, getHouseForLongitude } from '../calculations/planetLayer';
 
 const timezones = ['UTC', 'Europe/Kiev', 'Europe/Moscow', 'America/New_York', 'Asia/Tokyo'];
 
@@ -76,18 +80,16 @@ const EditIcon = ({ onClick }: { onClick: () => void }) => (
 
 const NatalDataDisplay = ({ data, onEdit }: { data: BirthData; onEdit: () => void }) => (
   <div style={{ marginBottom: '16px', padding: '8px', background: '#f9f9f9', border: '1px solid #d9d9d9' }}>
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-      <p style={{ margin: 0, fontSize: 13 }}>
-        <strong>Дата рождения:</strong> {dayjs(data.date).format('D MMM YYYY')} - {data.time}
-      </p>
-      <EditIcon onClick={onEdit} />
-    </div>
-    <p style={{ margin: 0, fontSize: 13 }}><strong>Время по Гринвичу:</strong> {data.gmtTime || 'N/A'}</p>
-    <p style={{ margin: 0, fontSize: 13 }}><strong>Система домов:</strong> {data.houseSystem || 'Placidus'}</p>
+    <p style={{ margin: '0 0 4px 0', fontSize: 13 }}>
+      <strong>Дата рождения:</strong> {dayjs(data.date).format('D MMM YYYY')} - {data.time}
+    </p>
+    <p style={{ margin: '0 0 4px 0', fontSize: 13 }}><strong>Система домов:</strong> {data.houseSystem || 'Placidus'}</p>
     {data.birthCity && (
       <>
-        <p style={{ margin: 0, fontSize: 13 }}><strong>Широта, Долгота:</strong> {data.birthCity.lat}° с. ш., {data.birthCity.lon}° в. д.</p>
-        <p style={{ margin: 0, fontSize: 13 }}><strong>Город рождения:</strong> {data.birthCity.name}, {data.birthCity.country}</p>
+        <p style={{ margin: '0 0 4px 0', fontSize: 13 }}><strong>Город рождения:</strong> {data.birthCity.name}</p>
+        <div style={{ marginTop: 2 }}>
+          <EditIcon onClick={onEdit} />
+        </div>
       </>
     )}
   </div>
@@ -258,13 +260,17 @@ const CityInput: FC<{ label: string; onSelect: (city: City) => void; initialCity
   );
 };
 
-export const NatalChart = () => {
+export const NatalChart = ({ mode = 'view' }: { mode?: 'view' | 'create' }) => {
   const { birthData, setBirthData, enrichedChart, loading, error: fetchError } = useNatal();
   
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditing, setIsEditing] = useState(mode === 'create');
   const [houseSystem, setHouseSystem] = useState<string>(birthData.houseSystem || 'Placidus');
   const [form] = Form.useForm();
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setIsEditing(mode === 'create');
+  }, [mode]);
 
   const [dateValue, setDateValue] = useState(birthData.date.split('-').reverse().join('.'));
   const [timeValue, setTimeValue] = useState(birthData.time + ':00');
@@ -388,9 +394,10 @@ export const NatalChart = () => {
     }
     if (!enrichedChart) return null;
 
-    const aspects = calculateAspects(enrichedChart.positions);
+    const aspects = calculateChartAspects(enrichedChart);
     const bindhuMatrix = createBindhuMatrix(enrichedChart, aspects);
     const houseMatrix = createHouseMatrix(enrichedChart);
+    const features = getHouseSystemFeatures(birthData.houseSystem);
     const shestopalovData = createShestopalovBaseData(enrichedChart, birthData.houseSystem, shestopalovEnabled);
 
     const handleShestopalovToggle = (enabled: boolean) => {
@@ -410,52 +417,38 @@ export const NatalChart = () => {
           />
         </div>
         <CelestialTable chart={enrichedChart} />
-        <BindhuTable 
-          matrix={bindhuMatrix} 
-          selectedObjectId={selectedObjectId}
-          onSelectObject={setSelectedObjectId}
-        />
-        <HouseMatrixWidget
-          matrix={houseMatrix}
-          selectedObjectId={selectedObjectId}
-          onSelectObject={setSelectedObjectId}
-        />
-        <ShestopalovWidget 
-          data={shestopalovData} 
-          onToggle={handleShestopalovToggle} 
-        />
-        
-        <div style={{ marginTop: 16, padding: 12, background: '#f0f2f5', border: '1px solid #d9d9d9', fontSize: 12 }}>
-          <h3 style={{ margin: '0 0 8px 0', fontSize: 13, color: '#003366' }}>Диагностический расчет натальной карты</h3>
-          <p style={{ margin: '0 0 4px 0' }}><strong>Количество рассчитанных объектов:</strong> {enrichedChart.positions.length}</p>
-          <p style={{ margin: '0 0 4px 0' }}><strong>ID объектов:</strong> {enrichedChart.positions.map(p => p.id).join(', ')}</p>
-          <p style={{ margin: '0 0 4px 0' }}><strong>ASC:</strong> {enrichedChart.houses.angles.ascendant.sign} {enrichedChart.houses.angles.ascendant.degree.toFixed(2)}° ({enrichedChart.houses.angles.ascendant.longitude.toFixed(2)}°)</p>
-          <p style={{ margin: '0 0 4px 0' }}><strong>MC:</strong> {enrichedChart.houses.angles.mc.sign} {enrichedChart.houses.angles.mc.degree.toFixed(2)}° ({enrichedChart.houses.angles.mc.longitude.toFixed(2)}°)</p>
-          <p style={{ margin: '0 0 4px 0' }}><strong>Количество домов:</strong> {enrichedChart.houses.cusps.length}</p>
-          <p style={{ margin: '0 0 8px 0' }}><strong>Количество найденных аспектов:</strong> {aspects.length}</p>
-          
-          <div style={{ marginTop: 8, borderTop: '1px solid #d9d9d9', paddingTop: 8 }}>
-            <strong>Первые объекты:</strong>
-            <ul>
-              {enrichedChart.positions.slice(0, 3).map(p => (
-                <li key={p.id}>
-                  {p.name} ({p.id}): {p.sign} {p.degree.toFixed(2)}° | Скорость: {p.speed.toFixed(3)} | Ретро: {p.retrograde ? 'да' : 'нет'}
-                </li>
-              ))}
-            </ul>
+        {features.showBindhu && (
+          <BindhuTable 
+            matrix={bindhuMatrix} 
+            selectedObjectId={selectedObjectId}
+            onSelectObject={setSelectedObjectId}
+          />
+        )}
+        {features.showHouseFormulas && (
+          <HouseMatrixWidget
+            matrix={houseMatrix}
+            selectedObjectId={selectedObjectId}
+            onSelectObject={setSelectedObjectId}
+          />
+        )}
+        <HousesWidget chart={enrichedChart} birthData={birthData} />
+        <AspectsWidget chart={enrichedChart} aspects={aspects} />
+        {features.showEventFormulas && (
+          <div style={{ marginTop: '16px', padding: '16px', background: '#f9f9f9', border: '1px solid #d9d9d9' }}>
+            <h3 style={{ fontSize: '14px', fontWeight: 'bold', color: '#003366', margin: '0 0 8px 0' }}>
+              Формулы событий
+            </h3>
+            <p style={{ fontSize: '13px', color: '#555', margin: 0 }}>
+              Формулы событий отображаются исключительно при выборе равнодомной системы домов (Equal).
+            </p>
           </div>
-
-          <div style={{ marginTop: 8, borderTop: '1px solid #d9d9d9', paddingTop: 8 }}>
-            <strong>Примеры аспектов (первые 3):</strong>
-            <ul>
-              {aspects.slice(0, 3).map((a, idx) => (
-                <li key={idx}>
-                  {a.source.name} — {a.target.name} : {a.aspectNameRu} (Орб: {a.orb}°)
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
+        )}
+        {features.showShestopalov && (
+          <ShestopalovWidget 
+            data={shestopalovData} 
+            onToggle={handleShestopalovToggle} 
+          />
+        )}
       </PageWrapper>
     );
   }
@@ -621,12 +614,17 @@ export const NatalChart = () => {
         )}
         <Form.Item label="Система домов" name="houseSystem" initialValue={birthData.houseSystem || 'Placidus'}>
           <Select
+            onChange={(val) => {
+              const updated = { ...birthData, houseSystem: val };
+              setBirthData(updated);
+              setHouseSystem(val);
+            }}
             options={[
-              { value: 'Placidus', label: 'Placidus' },
-              { value: 'Koch', label: 'Koch' },
-              { value: 'Equal', label: 'Equal House' },
-              { value: 'Regiomontanus', label: 'Regiomontanus' },
-              { value: 'WholeSign', label: 'Whole Sign' },
+              { value: 'Placidus', label: 'Плацидус — Психология и восприятие' },
+              { value: 'KochShestopalov', label: 'Шестопалов (Система Кох)' },
+              { value: 'Equal', label: 'Равнодомная — Архетипы и структура судьбы' },
+              { value: 'Regiomontanus', label: 'Региомонтан — Хорарная астрология' },
+              { value: 'WholeSign', label: 'Цельные знаки — Традиционная астрология и профекции' },
             ]}
           />
         </Form.Item>
@@ -659,7 +657,396 @@ export const SolarReturn = () => <DerivedPage title="Солярная карта
 export const Progressions = () => <DerivedPage title="Прогрессии" content="Данные вторичных прогрессий (доступ к натальному источнику без повторного вызова Swiss Ephemeris)." />;
 export const Directions = () => <DerivedPage title="Дирекции" content="Данные символических дирекций (опора на единый кэш натальной карты)." />;
 export const Transits = () => <DerivedPage title="Транзиты" content="Данные транзитной карты (натальный фундамент доступен напрямую)." />;
-export const Relocation = () => <DerivedPage title="Релокация" content="Данные карты релокации (используют натальные планеты и новые координаты места проживания/соляра)." />;
+export const Relocation = () => {
+  const { birthData, enrichedChart } = useNatal();
+  
+  const [cityInput, setCityInput] = useState<string>('');
+  const [cityOptions, setCityOptions] = useState<{ value: string; city: City; label: ReactNode }[]>([]);
+  const [cityLoading, setCityLoading] = useState<boolean>(false);
+  const citySearchTimeoutRef = React.useRef<any>(null);
+  const cityLastReqIdRef = React.useRef(0);
+
+  const handleRelocationCitySearch = (searchText: string) => {
+    setCityInput(searchText);
+
+    if (citySearchTimeoutRef.current) {
+      clearTimeout(citySearchTimeoutRef.current);
+    }
+
+    if (!searchText || searchText.trim().length < 2) {
+      setCityOptions([]);
+      setCityLoading(false);
+      return;
+    }
+
+    setCityLoading(true);
+    const reqId = ++cityLastReqIdRef.current;
+
+    citySearchTimeoutRef.current = setTimeout(async () => {
+      try {
+        const response = await fetch(`/api/cities?q=${encodeURIComponent(searchText)}`);
+        if (reqId !== cityLastReqIdRef.current) return;
+
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+
+        const items = await response.json();
+        if (reqId !== cityLastReqIdRef.current) return;
+
+        if (!Array.isArray(items) || items.length === 0) {
+          const filteredStatic = staticCities.filter(c => 
+            c.names.ru.toLowerCase().includes(searchText.toLowerCase()) ||
+            c.names.en.toLowerCase().includes(searchText.toLowerCase())
+          );
+          
+          if (filteredStatic.length > 0) {
+            const staticOpts = filteredStatic.map(c => ({
+              value: `${c.names.ru}, ${c.country}`,
+              city: c,
+              label: (
+                <div style={{ fontSize: 13, padding: '4px 0' }}>
+                  <strong>{c.names.ru}</strong> ({c.names.en}), {c.region}, {c.country}
+                  <div style={{ fontSize: '11px', color: '#666' }}>Шир: {c.lat}°, Долг: {c.lon}°</div>
+                </div>
+              )
+            }));
+            setCityOptions(staticOpts);
+          } else {
+            setCityOptions([{
+              value: searchText,
+              city: {
+                id: 'custom-' + Date.now(),
+                name: searchText,
+                names: { ru: searchText, en: searchText },
+                country: '',
+                region: '',
+                lat: 50.45,
+                lon: 30.52,
+                timezone: 'UTC'
+              },
+              label: <div style={{ color: '#888', fontStyle: 'italic', padding: '4px 0' }}>Город не найден в Nominatim. Нажмите для использования введённого значения.</div>
+            }]);
+          }
+          setCityLoading(false);
+          return;
+        }
+
+        const mappedOpts = items.map((item: any) => {
+          const addr = item.address || {};
+          const cityName = addr.city || addr.town || addr.village || addr.hamlet || item.name || searchText;
+          const region = addr.state || addr.region || addr.county || '';
+          const country = addr.country || '';
+          
+          const displayName = [cityName, region, country].filter(Boolean).join(', ');
+          const lat = parseFloat(item.lat);
+          const lon = parseFloat(item.lon);
+
+          const matchedStatic = staticCities.find(c => 
+            c.names.ru.toLowerCase() === cityName.toLowerCase() ||
+            c.names.en.toLowerCase() === cityName.toLowerCase()
+          );
+
+          const getNearestTimezone = (l: number, lo: number) => {
+            let nearest = staticCities[0];
+            let minDst = Infinity;
+            for (const c of staticCities) {
+              const d = Math.pow(c.lat - l, 2) + Math.pow(c.lon - lo, 2);
+              if (d < minDst) {
+                minDst = d;
+                nearest = c;
+              }
+            }
+            return nearest.timezone;
+          };
+
+          const cityObj: City = {
+            id: String(item.place_id || Math.random()),
+            name: cityName,
+            names: { ru: cityName, en: cityName },
+            country: country,
+            region: region,
+            lat: lat,
+            lon: lon,
+            timezone: matchedStatic?.timezone || getNearestTimezone(lat, lon)
+          };
+
+          return {
+            value: displayName,
+            city: cityObj,
+            label: (
+              <div style={{ fontSize: 13, padding: '4px 0' }}>
+                <strong>{cityName}</strong>
+                {region ? `, ${region}` : ''}
+                {country ? `, ${country}` : ''}
+                <div style={{ fontSize: '11px', color: '#666' }}>
+                  {lat.toFixed(2)}° {lat >= 0 ? 'с. ш.' : 'ю. ш.'}, {lon.toFixed(2)}° {lon >= 0 ? 'в. д.' : 'з. д.'}
+                </div>
+              </div>
+            )
+          };
+        });
+
+        setCityOptions(mappedOpts);
+        setCityLoading(false);
+      } catch (err) {
+        if (reqId !== cityLastReqIdRef.current) return;
+        console.error('Error fetching cities:', err);
+        setCityLoading(false);
+        setCityOptions([]);
+      }
+    }, 400);
+  };
+  const [selectedCity, setSelectedCity] = useState<City | null>(null);
+  const [yearInput, setYearInput] = useState<string>('');
+  const [timezoneInput, setTimezoneInput] = useState<string>('Europe/Berlin');
+  
+  const [latDeg, setLatDeg] = useState<number>(51);
+  const [latMin, setLatMin] = useState<number>(57);
+  const [latDir, setLatDir] = useState<'N' | 'S'>('N');
+
+  const [lonDeg, setLonDeg] = useState<number>(7);
+  const [lonMin, setLonMin] = useState<number>(38);
+  const [lonDir, setLonDir] = useState<'E' | 'W'>('E');
+
+  const [relocationChart, setRelocationChart] = useState<EnrichedChartResult | null>(null);
+  const [relocationStateName, setRelocationStateName] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleCitySelect = (city: City) => {
+    setSelectedCity(city);
+    setCityInput(city.names?.ru || city.name);
+    if (city.timezone) {
+      setTimezoneInput(city.timezone);
+    }
+    const dLat = decimalToDegMin(city.lat);
+    const dLon = decimalToDegMin(city.lon);
+    setLatDeg(dLat.deg);
+    setLatMin(dLat.min);
+    setLatDir(city.lat >= 0 ? 'N' : 'S');
+    setLonDeg(dLon.deg);
+    setLonMin(dLon.min);
+    setLonDir(city.lon >= 0 ? 'E' : 'W');
+  };
+
+  const handleCalculate = async () => {
+    if (!cityInput.trim()) {
+      setError('Пожалуйста, введите или выберите город переезда');
+      return;
+    }
+    setError(null);
+    setLoading(true);
+
+    try {
+      const latDec = latDir === 'S' ? -(latDeg + latMin / 60) : (latDeg + latMin / 60);
+      const lonDec = lonDir === 'W' ? -(lonDeg + lonMin / 60) : (lonDeg + lonMin / 60);
+
+      const payload = {
+        date: birthData.date,
+        time: birthData.time,
+        birthCity: {
+          ...birthData.birthCity,
+          lat: latDec,
+          lon: lonDec,
+          timezone: timezoneInput || birthData.birthCity.timezone
+        },
+        houseSystem: birthData.houseSystem || 'Placidus',
+        manualOverride: {
+          enabled: true,
+          lat: latDec,
+          latDir: latDir,
+          lon: lonDec,
+          lonDir: lonDir,
+          timezone: timezoneInput,
+          dst: 'auto'
+        }
+      };
+
+      const res = await fetch('/api/natal-chart', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        throw new Error('Ошибка расчёта релокационной карты');
+      }
+
+      const chartData = await res.json();
+      
+      // Preserve natal planet longitudes exactly as per rule 4
+      if (enrichedChart && enrichedChart.positions) {
+        const natalMap = new Map<string, EnrichedPlanetPosition>(enrichedChart.positions.map(p => [p.id, p]));
+        chartData.positions = chartData.positions.map((pos: EnrichedPlanetPosition) => {
+          const nat = natalMap.get(pos.id);
+          if (nat) {
+            return {
+              ...pos,
+              longitude: nat.longitude,
+              sign: nat.sign,
+              degree: nat.degree,
+              retrograde: nat.retrograde,
+              speed: nat.speed
+            };
+          }
+          return pos;
+        });
+
+        // Recalculate house placement and ruler formulas for planets using the new house cusps
+        const updatedPositions = chartData.positions.map((pos: any) => {
+          const house = getHouseForLongitude(pos.longitude, chartData.houses.cusps);
+          return { ...pos, house };
+        });
+        chartData.positions = updatedPositions;
+      }
+
+      setRelocationChart(chartData);
+      setRelocationStateName(cityInput);
+      setLoading(false);
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || 'Ошибка расчёта');
+      setLoading(false);
+    }
+  };
+
+  const activeChart = relocationChart || enrichedChart;
+  const isRelocationActive = !!relocationChart;
+  const aspects = activeChart ? calculateChartAspects(activeChart) : [];
+  const houseMatrix = activeChart ? createHouseMatrix(activeChart) : null;
+  const features = getHouseSystemFeatures(birthData.houseSystem);
+  const selectedObject = activeChart?.positions.find(p => p.id === (useNatal as any).selectedObjectId);
+
+  return (
+    <PageWrapper title="Релокация">
+      <div style={{ marginBottom: '16px', padding: '8px', background: '#f9f9f9', border: '1px solid #d9d9d9' }}>
+        <p style={{ margin: '0 0 4px 0', fontSize: 13 }}>
+          <strong>Исходная дата рождения:</strong> {dayjs(birthData.date).format('D MMM YYYY')} - {birthData.time}
+        </p>
+        <p style={{ margin: '0 0 4px 0', fontSize: 13 }}>
+          <strong>Исходный город рождения:</strong> {birthData.birthCity?.name} ({birthData.birthCity?.lat.toFixed(2)}°, {birthData.birthCity?.lon.toFixed(2)}°)
+        </p>
+        <p style={{ margin: '0 0 0 0', fontSize: 13, fontWeight: 'bold', color: isRelocationActive ? '#389e0d' : '#003366' }}>
+          {isRelocationActive ? `Релокационная карта: ${relocationStateName}` : 'Натальная карта'}
+        </p>
+      </div>
+
+      {/* Relocation Control Form Block */}
+      <div style={{ padding: '16px', background: '#f0f5ff', border: '1px solid #91caff', marginBottom: '16px', fontSize: 13 }}>
+        <h3 style={{ fontSize: '14px', fontWeight: 'bold', color: '#003366', margin: '0 0 12px 0' }}>
+          Релокация
+        </h3>
+        {error && <div style={{ color: 'red', marginBottom: 8 }}>{error}</div>}
+        
+        <Row gutter={16}>
+          <Col xs={24} md={12}>
+            <Form.Item label="Город переезда" style={{ marginBottom: 12 }}>
+              <AutoComplete
+                value={cityInput}
+                options={cityOptions}
+                onSearch={handleRelocationCitySearch}
+                onSelect={(val, option: any) => {
+                  setCityInput(val);
+                  if (option && option.city) {
+                    handleCitySelect(option.city);
+                  }
+                }}
+                placeholder="Город переезда (например, Münster)"
+                notFoundContent={cityLoading ? <div style={{ padding: 8, textAlign: 'center', color: '#888' }}>Загрузка...</div> : <div style={{ padding: 8, textAlign: 'center', color: '#888' }}>Ничего не найдено</div>}
+                style={{ width: '100%' }}
+              />
+            </Form.Item>
+          </Col>
+          <Col xs={24} md={6}>
+            <Form.Item label="Год" style={{ marginBottom: 12 }}>
+              <Input 
+                value={yearInput} 
+                onChange={(e) => setYearInput(e.target.value)} 
+                placeholder="2026" 
+              />
+            </Form.Item>
+          </Col>
+          <Col xs={24} md={6}>
+            <Form.Item label="Часовой пояс" style={{ marginBottom: 12 }}>
+              <Input 
+                value={timezoneInput} 
+                onChange={(e) => setTimezoneInput(e.target.value)} 
+                placeholder="Europe/Berlin" 
+              />
+            </Form.Item>
+          </Col>
+        </Row>
+
+        <Row gutter={16} align="middle">
+          <Col xs={12} md={6}>
+            <Form.Item label="Широта (град, мин, напр)" style={{ marginBottom: 12 }}>
+              <Space size={4}>
+                <Input value={latDeg} onChange={(e) => setLatDeg(Number(e.target.value) || 0)} style={{ width: 50 }} />
+                <span>°</span>
+                <Input value={latMin} onChange={(e) => setLatMin(Number(e.target.value) || 0)} style={{ width: 40 }} />
+                <span>′</span>
+                <Select value={latDir} onChange={(v) => setLatDir(v)} style={{ width: 55 }} options={[{ value: 'N', label: 'N' }, { value: 'S', label: 'S' }]} />
+              </Space>
+            </Form.Item>
+          </Col>
+          <Col xs={12} md={6}>
+            <Form.Item label="Долгота (град, мин, напр)" style={{ marginBottom: 12 }}>
+              <Space size={4}>
+                <Input value={lonDeg} onChange={(e) => setLonDeg(Number(e.target.value) || 0)} style={{ width: 50 }} />
+                <span>°</span>
+                <Input value={lonMin} onChange={(e) => setLonMin(Number(e.target.value) || 0)} style={{ width: 40 }} />
+                <span>′</span>
+                <Select value={lonDir} onChange={(v) => setLonDir(v)} style={{ width: 55 }} options={[{ value: 'E', label: 'E' }, { value: 'W', label: 'W' }]} />
+              </Space>
+            </Form.Item>
+          </Col>
+          <Col xs={24} md={12} style={{ textAlign: 'right', paddingTop: 12 }}>
+            <Button 
+              type="primary" 
+              onClick={handleCalculate}
+              loading={loading}
+              style={{ background: '#ffcc00', color: '#000', fontWeight: 'bold', borderColor: '#d9d9d9', height: 32, padding: '0 24px' }}
+            >
+              РАССЧИТАТЬ
+            </Button>
+          </Col>
+        </Row>
+      </div>
+
+      {activeChart && (
+        <>
+          <div style={{ margin: '16px 0' }}>
+            <NatalWheel 
+              chart={activeChart} 
+              aspects={aspects} 
+              selectedObjectId={null}
+              onSelectObject={() => {}}
+            />
+          </div>
+          <CelestialTable chart={activeChart} />
+          {features.showBindhu && (
+            <BindhuTable 
+              matrix={createBindhuMatrix(activeChart, aspects)} 
+              selectedObjectId={null}
+              onSelectObject={() => {}}
+            />
+          )}
+          {features.showHouseFormulas && (
+            <HouseMatrixWidget
+              matrix={houseMatrix!}
+              selectedObjectId={null}
+              onSelectObject={() => {}}
+            />
+          )}
+          <HousesWidget chart={activeChart} birthData={birthData} />
+          <AspectsWidget chart={activeChart} aspects={aspects} />
+        </>
+      )}
+    </PageWrapper>
+  );
+};
+
 export const Formulas = () => <DerivedPage title="Формулы" content="Расчёт астрологических формул событий (подключено к общему натальному источнику)." />;
 export const Analysis = () => <DerivedPage title="Анализ" content="Комплексный анализ натальной карты и прогнозов на базе общего источника." />;
 

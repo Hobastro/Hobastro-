@@ -2,7 +2,8 @@ import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { createServer as createViteServer } from 'vite';
-import { calculateEnrichedChart } from './src/calculations/planetLayer';
+import { calculatePositions } from './src/calculations/astroEngine';
+import { enrichChartPositions } from './src/calculations/planetLayer';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -49,7 +50,8 @@ async function startServer() {
       }
 
       const houseSystem = birthData.houseSystem || 'Placidus';
-      const enrichedChart = calculateEnrichedChart(birthData, houseSystem);
+      const astronomyResult = calculatePositions(birthData, houseSystem);
+      const enrichedChart = enrichChartPositions(astronomyResult);
       res.json(enrichedChart);
     } catch (error: any) {
       console.error('Calculation error on /api/natal-chart:', error);

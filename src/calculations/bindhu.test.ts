@@ -29,9 +29,9 @@ try {
 
   // 2. Build mock EnrichedChartResult adhering to contract to test matrix generation
   const mockPositions: EnrichedPlanetPosition[] = [
-    { id: 'sun', name: 'Солнце', longitude: 15.5, speed: 1, sign: 'Овен', degree: 15.5, retrograde: false, ruler: 'mars', rulesSigns: ['Лев'], dignities: { isDomicile: false, isDetriment: false, isExalted: false, isFallen: false } },
-    { id: 'moon', name: 'Луна', longitude: 45.2, speed: 13, sign: 'Телец', degree: 15.2, retrograde: false, ruler: 'venus', rulesSigns: ['Рак'], dignities: { isDomicile: false, isDetriment: false, isExalted: true, isFallen: false } },
-    { id: 'mars', name: 'Марс', longitude: 195.0, speed: 0.5, sign: 'Весы', degree: 15.0, retrograde: false, ruler: 'venus', rulesSigns: ['Овен', 'Скорпион'], dignities: { isDomicile: false, isDetriment: true, isExalted: false, isFallen: false } },
+    { id: 'sun', name: 'Солнце', longitude: 15.5, speed: 1, sign: 'Овен', degree: 15.5, retrograde: false, house: 1, ruler: 'mars', rulesSigns: ['Лев'], rulesHouses: [], dignities: { isDomicile: false, isDetriment: false, isExalted: false, isFallen: false } },
+    { id: 'moon', name: 'Луна', longitude: 45.2, speed: 13, sign: 'Телец', degree: 15.2, retrograde: false, house: 2, ruler: 'venus', rulesSigns: ['Рак'], rulesHouses: [], dignities: { isDomicile: false, isDetriment: false, isExalted: true, isFallen: false } },
+    { id: 'mars', name: 'Марс', longitude: 195.0, speed: 0.5, sign: 'Весы', degree: 15.0, retrograde: false, house: 7, ruler: 'venus', rulesSigns: ['Овен', 'Скорпион'], rulesHouses: [], dignities: { isDomicile: false, isDetriment: true, isExalted: false, isFallen: false } },
   ];
 
   const mockChart: EnrichedChartResult = {

@@ -1,5 +1,5 @@
 import { EnrichedChartResult, EnrichedPlanetPosition } from './planetLayer';
-import { AspectResult, calculateAspects } from './aspectEngine';
+import { AspectResult, calculateChartAspects } from './aspectEngine';
 import { 
   ZODIAC_SIGNS, 
   BindhuMatrix, 
@@ -47,7 +47,7 @@ export function createBindhuMatrix(
   }
 
   // Use existing Aspect Engine if aspects not explicitly passed
-  const aspectsList = aspectsOverride || calculateAspects(chart.positions);
+  const aspectsList = aspectsOverride || calculateChartAspects(chart);
 
   // Initialize 12 signs with 30 coordinate cells each (360 total positions)
   const signsMap = {} as Record<ZodiacSignName, BindhuSignRow>;

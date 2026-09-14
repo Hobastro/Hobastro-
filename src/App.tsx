@@ -32,8 +32,9 @@ const theme = {
 const Navigation = () => {
   const location = useLocation();
   const items = [
+    { path: '/create', label: 'Создать' },
     { path: '/natal', label: 'Натальная карта' },
-    { path: '/shestopalov', label: 'Шестопалов' },
+    { path: '/relocation', label: 'Релокация' },
     { path: '/solar-return', label: 'Солярная карта' },
     { path: '/progressions', label: 'Прогрессии' },
     { path: '/directions', label: 'Дирекции' },
@@ -85,6 +86,7 @@ export default function App() {
               <Routes>
                 <Route path="/" element={<Navigate to="/natal" replace />} />
                 <Route path="/natal" element={<NatalChart />} />
+                <Route path="/create" element={<NatalChart mode="create" />} />
                 <Route path="/shestopalov" element={<ShestopalovPage />} />
                 <Route path="/solar-return" element={<SolarReturn />} />
                 <Route path="/progressions" element={<Progressions />} />

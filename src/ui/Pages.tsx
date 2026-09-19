@@ -78,22 +78,37 @@ const EditIcon = ({ onClick }: { onClick: () => void }) => (
   </Button>
 );
 
-const NatalDataDisplay = ({ data, onEdit }: { data: BirthData; onEdit: () => void }) => (
-  <div style={{ marginBottom: '16px', padding: '8px', background: '#f9f9f9', border: '1px solid #d9d9d9' }}>
-    <p style={{ margin: '0 0 4px 0', fontSize: 13 }}>
-      <strong>Дата рождения:</strong> {dayjs(data.date).format('D MMM YYYY')} - {data.time}
-    </p>
-    <p style={{ margin: '0 0 4px 0', fontSize: 13 }}><strong>Система домов:</strong> {data.houseSystem || 'Placidus'}</p>
-    {data.birthCity && (
-      <>
-        <p style={{ margin: '0 0 4px 0', fontSize: 13 }}><strong>Город рождения:</strong> {data.birthCity.name}</p>
-        <div style={{ marginTop: 2 }}>
-          <EditIcon onClick={onEdit} />
-        </div>
-      </>
-    )}
-  </div>
-);
+const NatalDataDisplay = ({ data, onEdit }: { data: BirthData; onEdit: () => void }) => {
+  const lat = data.manualOverride?.lat !== undefined ? data.manualOverride.lat : data.birthCity?.lat;
+  const lon = data.manualOverride?.lon !== undefined ? data.manualOverride.lon : data.birthCity?.lon;
+  const formatCoord = (val: number | undefined, isLat: boolean) => {
+    if (val === undefined) return '';
+    const abs = Math.abs(val);
+    const deg = Math.floor(abs);
+    const min = Math.round((abs - deg) * 60);
+    const dir = isLat ? (val >= 0 ? 'с. ш.' : 'ю. ш.') : (val >= 0 ? 'в. д.' : 'з. д.');
+    return `${deg}°${min < 10 ? '0' + min : min}′ ${dir}`;
+  };
+
+  const coordStr = lat !== undefined && lon !== undefined ? ` (${formatCoord(lat, true)}, ${formatCoord(lon, false)})` : '';
+
+  return (
+    <div style={{ marginBottom: '16px', padding: '8px', background: '#f9f9f9', border: '1px solid #d9d9d9' }}>
+      <p style={{ margin: '0 0 4px 0', fontSize: 13 }}>
+        <strong>Дата рождения:</strong> {dayjs(data.date).format('D MMM YYYY')} - {data.time}
+      </p>
+      <p style={{ margin: '0 0 4px 0', fontSize: 13 }}><strong>Система домов:</strong> {data.houseSystem || 'Placidus'}</p>
+      {data.birthCity && (
+        <>
+          <p style={{ margin: '0 0 4px 0', fontSize: 13 }}><strong>Город рождения:</strong> {data.birthCity.names?.ru || data.birthCity.name}{coordStr}</p>
+          <div style={{ marginTop: 2 }}>
+            <EditIcon onClick={onEdit} />
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
 
 import { cities as staticCities } from '../data/cities';
 
@@ -520,66 +535,70 @@ export const NatalChart = ({ mode = 'view' }: { mode?: 'view' | 'create' }) => {
 
         {manualOpen && (
           <div style={{ background: '#fafafa', border: '1px solid #d9d9d9', padding: '12px', marginBottom: 16 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: 12, flexWrap: 'wrap' }}>
-              <span style={{ minWidth: '90px', fontSize: 13 }}>Широта:</span>
-              <Input 
-                style={{ width: '90px' }} 
-                value={`${latDeg}°${latMin < 10 ? '0' + latMin : latMin}′`}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  const digits = val.replace(/[^\d]/g, ' ');
-                  const parts = digits.trim().split(/\s+/).filter(Boolean);
-                  const d = parseInt(parts[0], 10) || 0;
-                  const m = parseInt(parts[1], 10) || 0;
-                  setLatDeg(d);
-                  setLatMin(m);
-                  updateManualData(d, m, latDir, lonDeg, lonMin, lonDir, selectedTz, selectedDst, true);
-                }}
-                placeholder="49°49′"
-              />
-              <Select
-                style={{ width: '110px' }}
-                value={latDir}
-                onChange={(val) => {
-                  setLatDir(val);
-                  updateManualData(latDeg, latMin, val, lonDeg, lonMin, lonDir, selectedTz, selectedDst, true);
-                }}
-                options={[
-                  { value: 'N', label: 'Север' },
-                  { value: 'S', label: 'Юг' }
-                ]}
-              />
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 13, marginBottom: 4 }}>Широта:</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                <Input 
+                  style={{ width: '110px' }} 
+                  value={`${latDeg}°${latMin < 10 ? '0' + latMin : latMin}′`}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    const digits = val.replace(/[^\d]/g, ' ');
+                    const parts = digits.trim().split(/\s+/).filter(Boolean);
+                    const d = parseInt(parts[0], 10) || 0;
+                    const m = parseInt(parts[1], 10) || 0;
+                    setLatDeg(d);
+                    setLatMin(m);
+                    updateManualData(d, m, latDir, lonDeg, lonMin, lonDir, selectedTz, selectedDst, true);
+                  }}
+                  placeholder="49°49′"
+                />
+                <Select
+                  style={{ width: '110px' }}
+                  value={latDir}
+                  onChange={(val) => {
+                    setLatDir(val);
+                    updateManualData(latDeg, latMin, val, lonDeg, lonMin, lonDir, selectedTz, selectedDst, true);
+                  }}
+                  options={[
+                    { value: 'N', label: 'Север' },
+                    { value: 'S', label: 'Юг' }
+                  ]}
+                />
+              </div>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: 12, flexWrap: 'wrap' }}>
-              <span style={{ minWidth: '90px', fontSize: 13 }}>Долгота:</span>
-              <Input 
-                style={{ width: '90px' }} 
-                value={`${lonDeg}°${lonMin < 10 ? '0' + lonMin : lonMin}′`}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  const digits = val.replace(/[^\d]/g, ' ');
-                  const parts = digits.trim().split(/\s+/).filter(Boolean);
-                  const d = parseInt(parts[0], 10) || 0;
-                  const m = parseInt(parts[1], 10) || 0;
-                  setLonDeg(d);
-                  setLonMin(m);
-                  updateManualData(latDeg, latMin, latDir, d, m, lonDir, selectedTz, selectedDst, true);
-                }}
-                placeholder="30°07′"
-              />
-              <Select
-                style={{ width: '110px' }}
-                value={lonDir}
-                onChange={(val) => {
-                  setLonDir(val);
-                  updateManualData(latDeg, latMin, latDir, lonDeg, lonMin, val, selectedTz, selectedDst, true);
-                }}
-                options={[
-                  { value: 'E', label: 'Восток' },
-                  { value: 'W', label: 'Запад' }
-                ]}
-              />
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 13, marginBottom: 4 }}>Долгота:</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                <Input 
+                  style={{ width: '110px' }} 
+                  value={`${lonDeg}°${lonMin < 10 ? '0' + lonMin : lonMin}′`}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    const digits = val.replace(/[^\d]/g, ' ');
+                    const parts = digits.trim().split(/\s+/).filter(Boolean);
+                    const d = parseInt(parts[0], 10) || 0;
+                    const m = parseInt(parts[1], 10) || 0;
+                    setLonDeg(d);
+                    setLonMin(m);
+                    updateManualData(latDeg, latMin, latDir, d, m, lonDir, selectedTz, selectedDst, true);
+                  }}
+                  placeholder="30°07′"
+                />
+                <Select
+                  style={{ width: '110px' }}
+                  value={lonDir}
+                  onChange={(val) => {
+                    setLonDir(val);
+                    updateManualData(latDeg, latMin, latDir, lonDeg, lonMin, val, selectedTz, selectedDst, true);
+                  }}
+                  options={[
+                    { value: 'E', label: 'Восток' },
+                    { value: 'W', label: 'Запад' }
+                  ]}
+                />
+              </div>
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: 12, flexWrap: 'wrap' }}>
@@ -658,9 +677,23 @@ export const Progressions = () => <DerivedPage title="Прогрессии" cont
 export const Directions = () => <DerivedPage title="Дирекции" content="Данные символических дирекций (опора на единый кэш натальной карты)." />;
 export const Transits = () => <DerivedPage title="Транзиты" content="Данные транзитной карты (натальный фундамент доступен напрямую)." />;
 export const Relocation = () => {
-  const { birthData, enrichedChart } = useNatal();
+  const { birthData, enrichedChart, loading: natalLoading, error: natalError } = useNatal();
   
-  const [cityInput, setCityInput] = useState<string>('');
+  const getInitialLat = () => birthData?.manualOverride?.lat !== undefined ? birthData.manualOverride.lat : (birthData?.birthCity?.lat ?? 55.7558);
+  const getInitialLon = () => birthData?.manualOverride?.lon !== undefined ? birthData.manualOverride.lon : (birthData?.birthCity?.lon ?? 37.6173);
+  const getInitialLatDMS = () => decimalToDegMin(getInitialLat());
+  const getInitialLonDMS = () => decimalToDegMin(getInitialLon());
+  const getInitialLatDir = (): 'N' | 'S' => {
+    if (birthData?.manualOverride?.latDir) return birthData.manualOverride.latDir;
+    return getInitialLat() >= 0 ? 'N' : 'S';
+  };
+  const getInitialLonDir = (): 'E' | 'W' => {
+    if (birthData?.manualOverride?.lonDir) return birthData.manualOverride.lonDir;
+    return getInitialLon() >= 0 ? 'E' : 'W';
+  };
+  const getInitialTz = () => birthData?.manualOverride?.timezone || 'Автоматически';
+
+  const [cityInput, setCityInput] = useState<string>(() => birthData?.birthCity?.names?.ru || birthData?.birthCity?.name || '');
   const [cityOptions, setCityOptions] = useState<{ value: string; city: City; label: ReactNode }[]>([]);
   const [cityLoading, setCityLoading] = useState<boolean>(false);
   const citySearchTimeoutRef = React.useRef<any>(null);
@@ -797,29 +830,67 @@ export const Relocation = () => {
       }
     }, 400);
   };
-  const [selectedCity, setSelectedCity] = useState<City | null>(null);
-  const [yearInput, setYearInput] = useState<string>('');
-  const [timezoneInput, setTimezoneInput] = useState<string>('Europe/Berlin');
+
+  const getDisplayLat = () => {
+    if (!birthData) return '';
+    const lat = birthData.manualOverride?.lat !== undefined ? birthData.manualOverride.lat : birthData.birthCity?.lat;
+    if (lat === undefined) return '';
+    const abs = Math.abs(lat);
+    const deg = Math.floor(abs);
+    const min = Math.round((abs - deg) * 60);
+    const dir = (birthData.manualOverride?.latDir || (lat >= 0 ? 'N' : 'S')) === 'N' ? 'с. ш.' : 'ю. ш.';
+    return `${deg}°${min < 10 ? '0' + min : min}′ ${dir}`;
+  };
+
+  const getDisplayLon = () => {
+    if (!birthData) return '';
+    const lon = birthData.manualOverride?.lon !== undefined ? birthData.manualOverride.lon : birthData.birthCity?.lon;
+    if (lon === undefined) return '';
+    const abs = Math.abs(lon);
+    const deg = Math.floor(abs);
+    const min = Math.round((abs - deg) * 60);
+    const dir = (birthData.manualOverride?.lonDir || (lon >= 0 ? 'E' : 'W')) === 'E' ? 'в. д.' : 'з. д.';
+    return `${deg}°${min < 10 ? '0' + min : min}′ ${dir}`;
+  };
+
+  const [relocationManualOpen, setRelocationManualOpen] = useState<boolean>(false);
+  const [selectedCity, setSelectedCity] = useState<City | null>(() => birthData?.birthCity || null);
+  const [timezoneInput, setTimezoneInput] = useState<string>(getInitialTz);
   
-  const [latDeg, setLatDeg] = useState<number>(51);
-  const [latMin, setLatMin] = useState<number>(57);
-  const [latDir, setLatDir] = useState<'N' | 'S'>('N');
+  const [latDeg, setLatDeg] = useState<number>(() => getInitialLatDMS().deg);
+  const [latMin, setLatMin] = useState<number>(() => getInitialLatDMS().min);
+  const [latDir, setLatDir] = useState<'N' | 'S'>(getInitialLatDir);
 
-  const [lonDeg, setLonDeg] = useState<number>(7);
-  const [lonMin, setLonMin] = useState<number>(38);
-  const [lonDir, setLonDir] = useState<'E' | 'W'>('E');
+  const [lonDeg, setLonDeg] = useState<number>(() => getInitialLonDMS().deg);
+  const [lonMin, setLonMin] = useState<number>(() => getInitialLonDMS().min);
+  const [lonDir, setLonDir] = useState<'E' | 'W'>(getInitialLonDir);
 
+  const [selectedObjectId, setSelectedObjectId] = useState<string | null>(null);
   const [relocationChart, setRelocationChart] = useState<EnrichedChartResult | null>(null);
   const [relocationStateName, setRelocationStateName] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (birthData && !relocationChart) {
+      setCityInput(birthData.birthCity?.names?.ru || birthData.birthCity?.name || '');
+      setSelectedCity(birthData.birthCity || null);
+      const dLat = getInitialLatDMS();
+      const dLon = getInitialLonDMS();
+      setLatDeg(dLat.deg);
+      setLatMin(dLat.min);
+      setLatDir(getInitialLatDir());
+      setLonDeg(dLon.deg);
+      setLonMin(dLon.min);
+      setLonDir(getInitialLonDir());
+      setTimezoneInput(getInitialTz());
+    }
+  }, [birthData]);
+
   const handleCitySelect = (city: City) => {
     setSelectedCity(city);
     setCityInput(city.names?.ru || city.name);
-    if (city.timezone) {
-      setTimezoneInput(city.timezone);
-    }
+    setTimezoneInput('Автоматически');
     const dLat = decimalToDegMin(city.lat);
     const dLon = decimalToDegMin(city.lon);
     setLatDeg(dLat.deg);
@@ -846,10 +917,11 @@ export const Relocation = () => {
         date: birthData.date,
         time: birthData.time,
         birthCity: {
-          ...birthData.birthCity,
+          ...(selectedCity || birthData.birthCity),
+          name: cityInput,
           lat: latDec,
           lon: lonDec,
-          timezone: timezoneInput || birthData.birthCity.timezone
+          timezone: (selectedCity?.timezone || birthData.birthCity.timezone)
         },
         houseSystem: birthData.houseSystem || 'Placidus',
         manualOverride: {
@@ -911,12 +983,27 @@ export const Relocation = () => {
     }
   };
 
+  if (natalLoading) {
+    return (
+      <PageWrapper title="Релокация">
+        <div style={{ padding: 24, textAlign: 'center' }}>Загрузка натальных данных из общего источника...</div>
+      </PageWrapper>
+    );
+  }
+  if (natalError) {
+    return (
+      <PageWrapper title="Релокация">
+        <div style={{ color: 'red', padding: 24 }}>Ошибка: {natalError}</div>
+      </PageWrapper>
+    );
+  }
+  if (!birthData || !enrichedChart) return null;
+
   const activeChart = relocationChart || enrichedChart;
   const isRelocationActive = !!relocationChart;
   const aspects = activeChart ? calculateChartAspects(activeChart) : [];
   const houseMatrix = activeChart ? createHouseMatrix(activeChart) : null;
   const features = getHouseSystemFeatures(birthData.houseSystem);
-  const selectedObject = activeChart?.positions.find(p => p.id === (useNatal as any).selectedObjectId);
 
   return (
     <PageWrapper title="Релокация">
@@ -925,7 +1012,7 @@ export const Relocation = () => {
           <strong>Исходная дата рождения:</strong> {dayjs(birthData.date).format('D MMM YYYY')} - {birthData.time}
         </p>
         <p style={{ margin: '0 0 4px 0', fontSize: 13 }}>
-          <strong>Исходный город рождения:</strong> {birthData.birthCity?.name} ({birthData.birthCity?.lat.toFixed(2)}°, {birthData.birthCity?.lon.toFixed(2)}°)
+          <strong>Исходный город рождения:</strong> {birthData.birthCity?.names?.ru || birthData.birthCity?.name} ({getDisplayLat()}, {getDisplayLon()})
         </p>
         <p style={{ margin: '0 0 0 0', fontSize: 13, fontWeight: 'bold', color: isRelocationActive ? '#389e0d' : '#003366' }}>
           {isRelocationActive ? `Релокационная карта: ${relocationStateName}` : 'Натальная карта'}
@@ -941,7 +1028,7 @@ export const Relocation = () => {
         
         <Row gutter={16}>
           <Col xs={24} md={12}>
-            <Form.Item label="Город переезда" style={{ marginBottom: 12 }}>
+            <Form.Item label="Город переезда" style={{ marginBottom: 4 }}>
               <AutoComplete
                 value={cityInput}
                 options={cityOptions}
@@ -957,61 +1044,112 @@ export const Relocation = () => {
                 style={{ width: '100%' }}
               />
             </Form.Item>
-          </Col>
-          <Col xs={24} md={6}>
-            <Form.Item label="Год" style={{ marginBottom: 12 }}>
-              <Input 
-                value={yearInput} 
-                onChange={(e) => setYearInput(e.target.value)} 
-                placeholder="2026" 
-              />
-            </Form.Item>
-          </Col>
-          <Col xs={24} md={6}>
-            <Form.Item label="Часовой пояс" style={{ marginBottom: 12 }}>
-              <Input 
-                value={timezoneInput} 
-                onChange={(e) => setTimezoneInput(e.target.value)} 
-                placeholder="Europe/Berlin" 
-              />
-            </Form.Item>
+            <div style={{ marginBottom: 12 }}>
+              <button
+                type="button"
+                onClick={() => setRelocationManualOpen(!relocationManualOpen)}
+                style={{
+                  color: '#ff9900',
+                  background: 'none',
+                  border: 'none',
+                  padding: 0,
+                  cursor: 'pointer',
+                  fontSize: '12px',
+                  textDecoration: 'underline',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 4
+                }}
+              >
+                <Pencil size={12} />
+                Настроить вручную
+              </button>
+            </div>
           </Col>
         </Row>
 
-        <Row gutter={16} align="middle">
-          <Col xs={12} md={6}>
-            <Form.Item label="Широта (град, мин, напр)" style={{ marginBottom: 12 }}>
-              <Space size={4}>
-                <Input value={latDeg} onChange={(e) => setLatDeg(Number(e.target.value) || 0)} style={{ width: 50 }} />
-                <span>°</span>
-                <Input value={latMin} onChange={(e) => setLatMin(Number(e.target.value) || 0)} style={{ width: 40 }} />
-                <span>′</span>
-                <Select value={latDir} onChange={(v) => setLatDir(v)} style={{ width: 55 }} options={[{ value: 'N', label: 'N' }, { value: 'S', label: 'S' }]} />
-              </Space>
-            </Form.Item>
-          </Col>
-          <Col xs={12} md={6}>
-            <Form.Item label="Долгота (град, мин, напр)" style={{ marginBottom: 12 }}>
-              <Space size={4}>
-                <Input value={lonDeg} onChange={(e) => setLonDeg(Number(e.target.value) || 0)} style={{ width: 50 }} />
-                <span>°</span>
-                <Input value={lonMin} onChange={(e) => setLonMin(Number(e.target.value) || 0)} style={{ width: 40 }} />
-                <span>′</span>
-                <Select value={lonDir} onChange={(v) => setLonDir(v)} style={{ width: 55 }} options={[{ value: 'E', label: 'E' }, { value: 'W', label: 'W' }]} />
-              </Space>
-            </Form.Item>
-          </Col>
-          <Col xs={24} md={12} style={{ textAlign: 'right', paddingTop: 12 }}>
-            <Button 
-              type="primary" 
-              onClick={handleCalculate}
-              loading={loading}
-              style={{ background: '#ffcc00', color: '#000', fontWeight: 'bold', borderColor: '#d9d9d9', height: 32, padding: '0 24px' }}
-            >
-              РАССЧИТАТЬ
-            </Button>
-          </Col>
-        </Row>
+        {relocationManualOpen && (
+          <div style={{ background: '#fafafa', border: '1px solid #d9d9d9', padding: '12px', marginBottom: 16 }}>
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 13, marginBottom: 4 }}>Широта:</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                <Input 
+                  style={{ width: '110px' }} 
+                  value={`${latDeg}°${latMin < 10 ? '0' + latMin : latMin}′`}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    const digits = val.replace(/[^\d]/g, ' ');
+                    const parts = digits.trim().split(/\s+/).filter(Boolean);
+                    const d = parseInt(parts[0], 10) || 0;
+                    const m = parseInt(parts[1], 10) || 0;
+                    setLatDeg(d);
+                    setLatMin(m);
+                  }}
+                  placeholder="51°57′"
+                />
+                <Select
+                  style={{ width: '110px' }}
+                  value={latDir}
+                  onChange={(val) => setLatDir(val)}
+                  options={[
+                    { value: 'N', label: 'Север' },
+                    { value: 'S', label: 'Юг' }
+                  ]}
+                />
+              </div>
+            </div>
+
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 13, marginBottom: 4 }}>Долгота:</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                <Input 
+                  style={{ width: '110px' }} 
+                  value={`${lonDeg}°${lonMin < 10 ? '0' + lonMin : lonMin}′`}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    const digits = val.replace(/[^\d]/g, ' ');
+                    const parts = digits.trim().split(/\s+/).filter(Boolean);
+                    const d = parseInt(parts[0], 10) || 0;
+                    const m = parseInt(parts[1], 10) || 0;
+                    setLonDeg(d);
+                    setLonMin(m);
+                  }}
+                  placeholder="07°38′"
+                />
+                <Select
+                  style={{ width: '110px' }}
+                  value={lonDir}
+                  onChange={(val) => setLonDir(val)}
+                  options={[
+                    { value: 'E', label: 'Восток' },
+                    { value: 'W', label: 'Запад' }
+                  ]}
+                />
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <span style={{ minWidth: '90px', fontSize: 13 }}>Часовой пояс:</span>
+              <Select
+                style={{ width: '220px' }}
+                value={timezoneInput}
+                onChange={(val) => setTimezoneInput(val)}
+                options={timezoneOptions}
+              />
+            </div>
+          </div>
+        )}
+
+        <div style={{ textAlign: 'right', marginTop: 12 }}>
+          <Button 
+            type="primary" 
+            onClick={handleCalculate}
+            loading={loading}
+            style={{ background: '#ffcc00', color: '#000', fontWeight: 'bold', borderColor: '#d9d9d9', height: 32, padding: '0 24px' }}
+          >
+            РАССЧИТАТЬ
+          </Button>
+        </div>
       </div>
 
       {activeChart && (
